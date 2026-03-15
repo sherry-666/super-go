@@ -606,46 +606,145 @@ function drawBoard() {
 }
 
 function drawFog(x, y, gridSize = 2) {
-    const fogX = padding + x * cellSize - cellSize * 0.5;
-    const fogY = padding + y * cellSize - cellSize * 0.5;
-    const size = cellSize * gridSize;
+    let fogX = padding + x * cellSize - cellSize * 0.5;
+    let fogY = padding + y * cellSize - cellSize * 0.5;
+    let size = cellSize * gridSize;
+    
+    // For full-board eternal night type fogs, cover the absolute entirety of the canvas
+    if (gridSize >= BOARD_SIZE) {
+        fogX = 0;
+        fogY = 0;
+        size = Math.max(canvas.width, canvas.height);
+    }
+
+    const centerX = fogX + size / 2;
+    const centerY = fogY + size / 2;
     const time = Date.now() / 1000;
 
     ctx.save();
     
-    // Main volume with slight pulse and movement
-    const pulse = Math.sin(time * 1.5) * 5;
-    const driftX = Math.cos(time * 0.8) * 4;
-    const driftY = Math.sin(time * 0.8) * 4;
-    
-    const grad = ctx.createRadialGradient(
-        fogX + size/2 + driftX, fogY + size/2 + driftY, 0,
-        fogX + size/2, fogY + size/2, (size/1.2) + pulse
-    );
-    grad.addColorStop(0, 'rgba(80, 80, 100, 1)'); // Full opacity
-    grad.addColorStop(1, 'rgba(30, 30, 50, 1)');  // Full opacity
-    
-    ctx.fillStyle = grad;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(fogX, fogY, size, size);
+    if (gridSize <= 3) {
+        // --- Style 1: Standard Fog (e.g. Blindfold 3x3) ---
+        const pulse = Math.sin(time * 1.5) * 5;
+        const driftX = Math.cos(time * 0.8) * 4;
+        const driftY = Math.sin(time * 0.8) * 4;
+        
+        const grad = ctx.createRadialGradient(
+            centerX + driftX, centerY + driftY, 0,
+            centerX, centerY, (size/1.2) + pulse
+        );
+        grad.addColorStop(0, 'rgba(80, 80, 100, 1)'); 
+        grad.addColorStop(1, 'rgba(25, 25, 35, 1)');  
+        
+        ctx.fillStyle = grad;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(fogX, fogY, size, size);
 
-    // Dynamic Whispies/Clouds
-    ctx.globalCompositeOperation = 'screen';
-    for(let i=0; i<8; i++) {
-        const speed = 0.5 + (i * 0.1);
-        const orbitRadius = cellSize * 0.4;
-        const angle = time * speed + (i * Math.PI / 4);
+        // Dynamic Whispies/Clouds
+        ctx.globalCompositeOperation = 'screen';
+        for(let i = 0; i < 8; i++) {
+            const speed = 0.5 + (i * 0.1);
+            const orbitRadius = cellSize * 0.4;
+            const angle = time * speed + (i * Math.PI / 4);
+            
+            const wx = centerX + Math.cos(angle) * orbitRadius * (1 + Math.sin(time * 0.5) * 0.2);
+            const wy = centerY + Math.sin(angle) * orbitRadius * (1 + Math.cos(time * 0.5) * 0.2);
+            const wr = cellSize * (0.5 + Math.sin(time + i) * 0.1);
+            
+            ctx.fillStyle = `rgba(200, 200, 220, ${0.1 + Math.sin(time * 2 + i) * 0.05})`;
+            ctx.beginPath();
+            ctx.arc(wx, wy, wr, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    } else if (gridSize <= 8) {
+        // --- Style 2: Dense Swirling Mist (e.g. Mirage, Deep Mist) ---
+        const pulse = Math.sin(time) * (size * 0.05);
+        ctx.fillStyle = 'rgba(15, 18, 25, 1)';
+        ctx.fillRect(fogX, fogY, size, size); // solid dark base
+
+        const grad = ctx.createRadialGradient(
+            centerX, centerY, size * 0.1,
+            centerX, centerY, size * 0.6 + pulse
+        );
+        grad.addColorStop(0, 'rgba(40, 50, 70, 0.9)'); 
+        grad.addColorStop(0.5, 'rgba(20, 25, 40, 0.95)');
+        grad.addColorStop(1, 'rgba(10, 12, 18, 1)');  
         
-        const wx = fogX + size/2 + Math.cos(angle) * orbitRadius * (1 + Math.sin(time * 0.5) * 0.2);
-        const wy = fogY + size/2 + Math.sin(angle) * orbitRadius * (1 + Math.cos(time * 0.5) * 0.2);
+        ctx.fillStyle = grad;
+        ctx.fillRect(fogX, fogY, size, size);
+
+        // Dense swirling layers
+        ctx.globalCompositeOperation = 'screen';
+        const numClouds = Math.floor(gridSize * 4); 
+        for (let i = 0; i < numClouds; i++) {
+            const seed = i * 13.5;
+            const speed = 0.3 + (i % 3) * 0.1;
+            const orbit = (cellSize * 0.5) * (1 + (i % Math.max(1, gridSize - 1)));
+            const angle = time * speed + seed;
+            
+            const wx = centerX + Math.cos(angle) * orbit;
+            // slightly elliptical orbit
+            const wy = centerY + Math.sin(angle) * orbit * 0.8; 
+            const wr = cellSize * (0.8 + Math.sin(time + seed) * 0.3);
+            
+            ctx.fillStyle = `rgba(90, 130, 180, ${0.05 + Math.sin(time + seed) * 0.02})`;
+            ctx.beginPath();
+            ctx.arc(wx, wy, wr, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    } else {
+        // --- Style 3: Galactic Void (e.g. Void Realm, Eternal Night) ---
+        const pulse = Math.sin(time * 0.5) * (size * 0.05);
         
-        const wr = cellSize * (0.5 + Math.sin(time + i) * 0.1);
+        ctx.fillStyle = 'rgba(2, 2, 5, 1)';
+        ctx.fillRect(fogX, fogY, size, size);
+
+        // Deep space gradient
+        const grad = ctx.createRadialGradient(
+            centerX, centerY, size * 0.1,
+            centerX, centerY, size * 0.6 + pulse
+        );
+        grad.addColorStop(0, 'rgba(60, 20, 100, 0.9)'); 
+        grad.addColorStop(0.4, 'rgba(20, 10, 40, 0.95)'); 
+        grad.addColorStop(1, 'rgba(0, 0, 0, 1)');
         
-        ctx.fillStyle = `rgba(200, 200, 220, ${0.1 + Math.sin(time * 2 + i) * 0.05})`;
-        ctx.beginPath();
-        ctx.arc(wx, wy, wr, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = grad;
+        ctx.fillRect(fogX, fogY, size, size);
+
+        // Twinkling stars
+        ctx.globalCompositeOperation = 'screen';
+        // Density scales with the area of the void
+        const numStars = Math.min(300, Math.floor((size * size) / 5000));
+        for (let i = 0; i < numStars; i++) {
+            const seed = i * 99.1;
+            const sx = fogX + (Math.sin(seed * 1.1) * 0.5 + 0.5) * size;
+            const sy = fogY + (Math.cos(seed * 1.3) * 0.5 + 0.5) * size;
+            const twinkle = Math.max(0, Math.sin(time * (1 + i % 3) + seed));
+            const sr = 1 + (i % 2) * twinkle;
+
+            ctx.fillStyle = `rgba(200, 150, 255, ${twinkle * 0.8})`;
+            ctx.beginPath();
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Space vortex tendrils
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 7; i++) {
+            const angleOffset = i * (Math.PI * 2 / 7) + time * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            for (let r = 0; r < size * 0.6; r += 20) {
+                const a = angleOffset + r * 0.005; 
+                const tx = centerX + Math.cos(a) * r;
+                const ty = centerY + Math.sin(a) * r;
+                ctx.lineTo(tx, ty);
+            }
+            ctx.strokeStyle = `rgba(90, 40, 180, 0.15)`;
+            ctx.lineWidth = size * 0.05;
+            ctx.stroke();
+        }
     }
     
     ctx.restore();
