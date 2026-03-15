@@ -18,6 +18,9 @@ class SkillManager {
         this.registerSkill(new MirageSkill());
         this.registerSkill(new TripleSalvoSkill());
         this.registerSkill(new JusticeFromAboveSkill());
+        this.registerSkill(new DeepMistSkill());
+        this.registerSkill(new VoidRealmSkill());
+        this.registerSkill(new EternalNightSkill());
 
         this.activeEffects = {
             noSlacking: null,

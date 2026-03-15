@@ -2,7 +2,9 @@ window.BOARD_SIZE = 19;
 window.SkillTier = Object.freeze({
     TIER1: 1,
     TIER2: 2,
-    TIER3: 3
+    TIER3: 3,
+    TIER4: 4,
+    TIER5: 5
 });
 let cellSize = 0;
 let padding = 28; // Reduced from 40 for more board space
@@ -21,6 +23,9 @@ const skillMeta = {
     mirage:        { icon: '🌫️', nameKey: 'skillMirage',         descKey: 'skillMirageDesc', tier: SkillTier.TIER2 },
     triple_salvo:  { icon: '🚀', nameKey: 'skillTripleSalvo',    descKey: 'skillTripleSalvoDesc', tier: SkillTier.TIER3 },
     justice_from_above: { icon: '☄️', nameKey: 'skillJustice',   descKey: 'skillJusticeDesc', tier: SkillTier.TIER3 },
+    deep_mist:     { icon: '🌪️', nameKey: 'skillDeepMist',       descKey: 'skillDeepMistDesc', tier: SkillTier.TIER3 },
+    void_realm:    { icon: '🌌', nameKey: 'skillVoidRealm',      descKey: 'skillVoidRealmDesc', tier: SkillTier.TIER4 },
+    eternal_night: { icon: '🌑', nameKey: 'skillEternalNight',   descKey: 'skillEternalNightDesc', tier: SkillTier.TIER5 },
 };
 
 const KOMI = 6.5;
@@ -1533,6 +1538,9 @@ function updateSkillUI() {
             triple_salvo:[t('skillTripleSalvoStep1'), t('skillTripleSalvoStep2')],
             mirage:      [t('skillMirageStep1')],
             justice_from_above: [t('skillJusticeStep1')],
+            deep_mist:   [t('skillDeepMistStep1')],
+            void_realm:  [t('skillVoidRealmStep1')],
+            eternal_night: [t('skillEternalNightStep1')],
         };
         if (activeId && stepMsgs[activeId]) {
             statusEl.textContent = stepMsgs[activeId][(skillManager.skillStep - 1)] || '';
