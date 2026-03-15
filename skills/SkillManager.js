@@ -85,6 +85,13 @@ class SkillManager {
                 if (isOnlineGame && wsSendCallback) {
                     wsSendCallback('skill', { skill: skillId });
                 }
+                
+                // Feedback for local player
+                if (typeof playSkillSound === 'function') playSkillSound('impact');
+                if (typeof showSkillPopup === 'function' && !skill.isSecret) {
+                    showSkillPopup(t(skill.nameKey) + ' Activated!');
+                }
+                
                 this.cancelActiveSkill();
             } else {
                 this.activeSkill = skill;
@@ -128,6 +135,13 @@ class SkillManager {
                         wsSendCallback('skill', { skill: skillId, x1, y1, x2: x, y2: y });
                     }
                 }
+                
+                // Feedback for local player
+                if (typeof playSkillSound === 'function') playSkillSound('impact');
+                if (typeof showSkillPopup === 'function' && !skill.isSecret) {
+                    showSkillPopup(t(skill.nameKey) + ' Activated!');
+                }
+                
                 return true;
             }
         }
@@ -148,6 +162,15 @@ class SkillManager {
         }
         this.skillUsedThisTurn[p] = true;
         this.removeSkillFromHand(p, skillId);
+        
+        // Opponent using a skill
+        if (!skill.isSecret) {
+            if (typeof playSkillSound === 'function') playSkillSound('impact');
+            if (typeof showSkillPopup === 'function') {
+                const label = getPlayerLabel(p);
+                showSkillPopup(`${label}: ${t(skill.nameKey)}!`);
+            }
+        }
     }
 
     clearEffects(playerId) {

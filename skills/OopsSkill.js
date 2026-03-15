@@ -1,6 +1,7 @@
 class OopsSkill extends BaseSkill {
     constructor() {
         super('oops', 'skillOops', 'skillOopsDesc', SkillTier.TIER1);
+        this.isSecret = true;
     }
 
     getTotalSteps() {

@@ -4,6 +4,7 @@ class BaseSkill {
         this.nameKey = nameKey;
         this.descKey = descKey;
         this.tier = tier;
+        this.isSecret = false; // Default: announcement-based skills
     }
 
     /**

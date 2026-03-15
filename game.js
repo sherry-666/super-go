@@ -1048,10 +1048,90 @@ function playDisallowSound() {
     }
 }
 
+function playSkillSound(type = 'impact') {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const audioCtx = new AudioContext();
+        
+        const masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+
+        if (type === 'shimmer') {
+            // Option A: Shimmer (Magical/Sparkly)
+            for (let i = 0; i < 3; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200 + i * 400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800 + i * 200, audioCtx.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start(audioCtx.currentTime + i * 0.05);
+                osc.stop(audioCtx.currentTime + 0.4 + i * 0.05);
+            }
+        } else if (type === 'impact') {
+            // Option B: Impact (Powerful Thump)
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2);
+            
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'energy') {
+            // Option C: Energy (Rising Charge)
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.25);
+            
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+    } catch (e) {
+        console.log('Skill sound failed', e);
+    }
+}
+
+function showSkillPopup(text, isTrigger = false) {
+    const popup = document.getElementById('skill-popup');
+    if (!popup) return;
+
+    popup.textContent = text;
+    popup.classList.remove('trigger');
+    if (isTrigger) popup.classList.add('trigger');
+    
+    popup.classList.add('show');
+    
+    setTimeout(() => {
+        popup.classList.remove('show');
+    }, 2000);
+}
+
 function tryPlaceStone(x, y) {
     if (skillManager.activeEffects.noSlacking === currentPlayer) {
         if (x <= 2 || x >= BOARD_SIZE - 3 || y <= 2 || y >= BOARD_SIZE - 3) {
             playDisallowSound();
+            playSkillSound('impact');
+            showSkillPopup(t('skillNoSlacking') + ' Triggered!', true);
             return; // Block placement on or below 3rd line
         }
     }
@@ -1073,6 +1153,8 @@ function tryPlaceStone(x, y) {
             const randIndex = Math.floor(Math.random() * validDeviations.length);
             x = validDeviations[randIndex].x;
             y = validDeviations[randIndex].y;
+            playSkillSound('impact');
+            showSkillPopup(t('skillOops') + ' Triggered!', true);
         }
     }
 
