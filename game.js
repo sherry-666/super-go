@@ -1902,8 +1902,11 @@ document.getElementById('btn-play-again').addEventListener('click', () => {
 
 document.getElementById('btn-return-lobby').addEventListener('click', () => {
     if (gamePhase === 'playing' && turnCount > 1) {
-        showConfirm(t('returnLobby'), "Quit to Lobby?", () => {
-            returnToLobby();
+        showConfirm(t('resign'), t('confirmLobbyResign'), () => {
+            applyResign();
+            if (gameMode === 'online') {
+                wsSend('resign', {});
+            }
         });
     } else {
         returnToLobby();
