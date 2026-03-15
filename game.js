@@ -506,12 +506,39 @@ function drawBoard() {
 
     const highlightStyle = skillManager.getHighlightStyle();
 
+    // Track which cells to skip drawing normal stones because they are part of a giant stone
+    const skipDrawing = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(false));
+
+    if (skillManager && skillManager.activeEffects.giantStones) {
+        skillManager.activeEffects.giantStones = skillManager.activeEffects.giantStones.filter(gs => {
+            // Check if the 2x2 area is still intact and belongs to the correct player
+            if (gs.x + 1 < BOARD_SIZE && gs.y + 1 < BOARD_SIZE &&
+                board[gs.x][gs.y] === gs.color &&
+                board[gs.x+1][gs.y] === gs.color &&
+                board[gs.x][gs.y+1] === gs.color &&
+                board[gs.x+1][gs.y+1] === gs.color) {
+                
+                skipDrawing[gs.x][gs.y] = true;
+                skipDrawing[gs.x+1][gs.y] = true;
+                skipDrawing[gs.x][gs.y+1] = true;
+                skipDrawing[gs.x+1][gs.y+1] = true;
+                
+                // Draw the giant stone itself
+                drawGiantStone(gs.x, gs.y, gs.color);
+                return true; // Keep it
+            }
+            return false; // Remove it, it was broken or captured
+        });
+    }
+
     for (let i = 0; i < BOARD_SIZE; i++) {
         if (!board[i] || !Array.isArray(board[i])) continue; // Defensive
         for (let j = 0; j < BOARD_SIZE; j++) {
             const stone = board[i][j];
             if (stone !== EMPTY) {
-                drawStone(i, j, stone);
+                if (!skipDrawing[i][j]) {
+                    drawStone(i, j, stone);
+                }
                 if (markedDead && markedDead[i] && markedDead[i][j]) {
                     drawDeadMarker(i, j);
                 }
@@ -631,6 +658,51 @@ function drawLastMoveMarker(x, y) {
     ctx.beginPath();
     ctx.arc(cx, cy, cellSize * 0.15, 0, 2 * Math.PI);
     ctx.stroke();
+    ctx.restore();
+}
+
+function drawGiantStone(x, y, color) {
+    // The center is exactly halfway between the top-left and bottom-right intersections
+    const cx = padding + x * cellSize + cellSize / 2;
+    const cy = padding + y * cellSize + cellSize / 2;
+    
+    // Total width spans almost 2 cells. Standard stone radius is roughly cellSize/2.
+    // Giant stone radius should be slightly less than full cellSize.
+    const radius = cellSize - 2;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+    
+    // Gradients for 3D effect
+    const gradient = ctx.createRadialGradient(
+        cx - radius / 3, 
+        cy - radius / 3, 
+        radius / 10, 
+        cx, cy, radius
+    );
+    
+    if (color === BLACK) {
+        gradient.addColorStop(0, '#666');
+        gradient.addColorStop(1, '#111');
+    } else {
+        gradient.addColorStop(0, '#fff');
+        gradient.addColorStop(1, '#ccc');
+    }
+    
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 4;
+    ctx.fill();
+    
+    if (color === WHITE) {
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    
     ctx.restore();
 }
 

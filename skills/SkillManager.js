@@ -21,7 +21,8 @@ class SkillManager {
         this.activeEffects = {
             noSlacking: null,
             oops: null,
-            blindfolds: []
+            blindfolds: [],
+            giantStones: []
         };
 
         // Player hands: skills owned, ready to use

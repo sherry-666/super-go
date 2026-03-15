@@ -89,6 +89,12 @@ class JusticeFromAboveSkill extends BaseSkill {
         });
 
         // 3. Visuals and Finalization
+        manager.activeEffects.giantStones.push({
+            x: targetX,
+            y: targetY,
+            color: p
+        });
+
         playSkillSound('impact'); // loud crush
         setTimeout(() => playStoneSound(), 100); 
 
