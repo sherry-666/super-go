@@ -16,6 +16,7 @@ class SkillManager {
         this.registerSkill(new DoubleTapSkill());
         this.registerSkill(new BlindfoldSkill());
         this.registerSkill(new TripleSalvoSkill());
+        this.registerSkill(new JusticeFromAboveSkill());
 
         this.activeEffects = {
             noSlacking: null,
