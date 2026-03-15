@@ -39,6 +39,15 @@ class FlashMoveSkill extends BaseSkill {
         if (typeof drawBoard === 'function') {
             drawBoard();
         }
+
+        // Highlight the stone's new location for clear feedback
+        if (typeof drawSkillHighlight === 'function') {
+            const highlightConfig = {
+                borderColor: 'rgba(100, 180, 255, 0.9)',
+                glowColor: 'rgba(100, 180, 255, 0.6)'
+            };
+            drawSkillHighlight(x2, y2, highlightConfig);
+        }
     }
 
     isInFlashRange(fromX, fromY, toX, toY) {
