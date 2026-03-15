@@ -18,6 +18,7 @@ class FlashMoveSkill extends BaseSkill {
     }
 
     isValidTarget(x, y, step, selectedCell) {
+        if (window.isSquatter(x, y)) return false;
         if (step === 1) {
             return board[x][y] === currentPlayer;
         } else if (step === 2 && selectedCell) {

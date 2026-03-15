@@ -22,10 +22,12 @@ const skillMeta = {
     blindfold:     { icon: '🌫️', nameKey: 'skillBlindfold',      descKey: 'skillBlindfoldDesc', tier: SkillTier.TIER1 },
     mirage:        { icon: '🌫️', nameKey: 'skillMirage',         descKey: 'skillMirageDesc', tier: SkillTier.TIER2 },
     triple_salvo:  { icon: '🚀', nameKey: 'skillTripleSalvo',    descKey: 'skillTripleSalvoDesc', tier: SkillTier.TIER3 },
-    justice_from_above: { icon: '☄️', nameKey: 'skillJustice',   descKey: 'skillJusticeDesc', tier: SkillTier.TIER3 },
+    dibs:          { icon: '☄️', nameKey: 'skillDibs',           descKey: 'skillDibsDesc', tier: SkillTier.TIER3 },
     deep_mist:     { icon: '🌪️', nameKey: 'skillDeepMist',       descKey: 'skillDeepMistDesc', tier: SkillTier.TIER3 },
     void_realm:    { icon: '🌌', nameKey: 'skillVoidRealm',      descKey: 'skillVoidRealmDesc', tier: SkillTier.TIER4 },
+    coming_through:{ icon: '🚷', nameKey: 'skillComingThrough',  descKey: 'skillComingThroughDesc', tier: SkillTier.TIER4 },
     eternal_night: { icon: '🌑', nameKey: 'skillEternalNight',   descKey: 'skillEternalNightDesc', tier: SkillTier.TIER5 },
+    the_squatter:  { icon: '🔒', nameKey: 'skillTheSquatter',    descKey: 'skillTheSquatterDesc', tier: SkillTier.TIER5 },
 };
 
 const KOMI = 6.5;
@@ -531,7 +533,7 @@ function drawBoard() {
                 skipDrawing[gs.x+1][gs.y+1] = true;
                 
                 // Draw the giant stone itself
-                drawGiantStone(gs.x, gs.y, gs.color);
+                drawGiantStone(gs.x, gs.y, gs.color, gs.isSquatter);
                 return true; // Keep it
             }
             return false; // Remove it, it was broken or captured
@@ -767,7 +769,7 @@ function drawLastMoveMarker(x, y) {
     ctx.restore();
 }
 
-function drawGiantStone(x, y, color) {
+function drawGiantStone(x, y, color, isSquatter = false) {
     // The center is exactly halfway between the top-left and bottom-right intersections
     const cx = padding + x * cellSize + cellSize / 2;
     const cy = padding + y * cellSize + cellSize / 2;
@@ -807,6 +809,14 @@ function drawGiantStone(x, y, color) {
         ctx.strokeStyle = '#999';
         ctx.lineWidth = 2;
         ctx.stroke();
+    }
+    
+    // Draw lock icon if it's an immortal squatter
+    if (isSquatter) {
+        ctx.font = `${radius * 0.8}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🔒', cx, cy);
     }
     
     ctx.restore();
@@ -933,12 +943,17 @@ function getGroup(x, y, currentBoard = board) {
     const liberties = new Set();
     const visited = new Set();
     const queue = [[x, y]];
+    let hasSquatter = false;
     
     visited.add(`${x},${y}`);
 
     while (queue.length > 0) {
         const [cx, cy] = queue.shift();
         stones.push([cx, cy]);
+        
+        if (window.isSquatter(cx, cy)) {
+            hasSquatter = true;
+        }
 
         for (const [nx, ny] of getNeighbors(cx, cy)) {
             const nColor = currentBoard[nx][ny];
@@ -953,7 +968,7 @@ function getGroup(x, y, currentBoard = board) {
         }
     }
 
-    return { stones, liberties: Array.from(liberties) };
+    return { stones, liberties: Array.from(liberties), hasSquatter };
 }
 
 function calculateScore() {
@@ -1008,6 +1023,39 @@ function isMyTurn() {
 }
 
 // ====================== Move Application (shared by local & online) ======================
+function isValidMove(x, y, playerColor, currentBoard = board) {
+    if (currentBoard[x][y] !== EMPTY) return false; // Already occupied
+
+    const enemyColor = playerColor === BLACK ? WHITE : BLACK;
+
+    // Check liberties of resulting group (and if it captures anything)
+    const nextBoard = cloneBoard(currentBoard);
+    nextBoard[x][y] = playerColor;
+    let capturesEnemy = false;
+    
+    // Check if it captures enemy
+    for(const [nx, ny] of getNeighbors(x, y)) {
+        if(nextBoard[nx][ny] === enemyColor) {
+            const enemyGroup = getGroup(nx, ny, nextBoard);
+            if(enemyGroup.liberties.length === 0 && !enemyGroup.hasSquatter) {
+                capturesEnemy = true;
+                break;
+            }
+        }
+    }
+    
+    // If it captures, it's not suicide
+    if(capturesEnemy) return true;
+    
+    // If it doesn't capture, check its own liberties
+    const myGroup = getGroup(x, y, nextBoard);
+    if(myGroup.liberties.length === 0 && !myGroup.hasSquatter) {
+        return false; // Suicide attempt is invalid unless group has a Squatter
+    }
+    
+    return true;
+}
+
 function applyMove(x, y) {
     const nextBoard = cloneBoard(board);
     nextBoard[x][y] = currentPlayer;
@@ -1017,7 +1065,7 @@ function applyMove(x, y) {
     for (const [nx, ny] of getNeighbors(x, y)) {
         if (nextBoard[nx][ny] === opponentColor) {
             const group = getGroup(nx, ny, nextBoard);
-            if (group.liberties.length === 0) {
+            if (group.liberties.length === 0 && !group.hasSquatter) {
                 group.stones.forEach(([cx, cy]) => {
                     nextBoard[cx][cy] = EMPTY;
                     capturedCount++;
@@ -1637,9 +1685,10 @@ function updateSkillUI() {
             double_tap:  [t('skillDoubleTapStep1'), t('skillDoubleTapStep2')],
             triple_salvo:[t('skillTripleSalvoStep1'), t('skillTripleSalvoStep2')],
             mirage:      [t('skillMirageStep1')],
-            justice_from_above: [t('skillJusticeStep1')],
+            dibs:        [t('skillDibsStep1')],
             deep_mist:   [t('skillDeepMistStep1')],
             void_realm:  [t('skillVoidRealmStep1')],
+            coming_through: [t('skillComingThroughStep1')],
             eternal_night: [t('skillEternalNightStep1')],
         };
         if (activeId && stepMsgs[activeId]) {
@@ -1850,7 +1899,6 @@ document.getElementById('btn-show-log').addEventListener('click', () => {
 document.getElementById('btn-close-log').addEventListener('click', () => {
     document.getElementById('log-modal').classList.add('hidden');
 });
-
 
 // ====================== Modals ======================
 function showConfirm(titleKey, messageKey, onConfirm) {

@@ -17,10 +17,12 @@ class SkillManager {
         this.registerSkill(new BlindfoldSkill());
         this.registerSkill(new MirageSkill());
         this.registerSkill(new TripleSalvoSkill());
-        this.registerSkill(new JusticeFromAboveSkill());
+        this.registerSkill(new DibsSkill());
         this.registerSkill(new DeepMistSkill());
         this.registerSkill(new VoidRealmSkill());
+        this.registerSkill(new ComingThroughSkill());
         this.registerSkill(new EternalNightSkill());
+        this.registerSkill(new TheSquatterSkill());
 
         this.activeEffects = {
             noSlacking: null,

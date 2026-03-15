@@ -18,9 +18,11 @@ class ExcuseMeSkill extends BaseSkill {
     }
 
     isValidTarget(x, y, step, selectedCell) {
+        if (window.isSquatter(x, y)) return false;
         const opponentColor = currentPlayer === BLACK ? WHITE : BLACK;
         
         if (step === 1) {
+            if (board[x][y] !== currentPlayer) return false;
             // Select own stone adjacent to enemy
             if (board[x][y] === currentPlayer) {
                 const neighbors = getNeighbors(x, y);

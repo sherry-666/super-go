@@ -1,6 +1,6 @@
-class JusticeFromAboveSkill extends BaseSkill {
+class TheSquatterSkill extends BaseSkill {
     constructor() {
-        super('justice_from_above', 'skillJustice', 'skillJusticeDesc', SkillTier.TIER3);
+        super('the_squatter', 'skillTheSquatter', 'skillTheSquatterDesc', SkillTier.TIER5);
         this.endsTurn = true;
     }
 
@@ -9,33 +9,20 @@ class JusticeFromAboveSkill extends BaseSkill {
     }
 
     hasValidTargets(board, currentPlayer) {
-        const size = board.length;
-        for (let x = 0; x < size - 1; x++) {
-            for (let y = 0; y < size - 1; y++) {
-                if (board[x][y] === EMPTY && 
-                    board[x+1][y] === EMPTY && 
-                    board[x][y+1] === EMPTY && 
-                    board[x+1][y+1] === EMPTY) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return true;
     }
 
     isValidTarget(x, y, step, selectedCell) {
         if (x >= board.length - 1 || y >= board.length - 1) return false;
-        
-        return board[x][y] === EMPTY && 
-               board[x+1][y] === EMPTY && 
-               board[x][y+1] === EMPTY && 
-               board[x+1][y+1] === EMPTY;
+        // Cannot drop on top of another Squatter (must respect existing squatters)
+        return !(window.isSquatter(x, y) || window.isSquatter(x+1, y) || 
+                 window.isSquatter(x, y+1) || window.isSquatter(x+1, y+1));
     }
 
     applyEffect(step, targetX, targetY, selectedCell, manager) {
         const p = currentPlayer;
         
-        // The 4 stones representing the giant 2x2 stone
+        // The 4 stones representing the giant 2x2 squatter stone
         const stones = [
             {x: targetX, y: targetY},
             {x: targetX + 1, y: targetY},
@@ -49,7 +36,6 @@ class JusticeFromAboveSkill extends BaseSkill {
             if (board[s.x][s.y] !== EMPTY && board[s.x][s.y] !== p) {
                 crushed++;
             }
-            // Overwrite (though isValidTarget enforces empty locally, this ensures crushing if forced)
             board[s.x][s.y] = p;
         });
         
@@ -57,7 +43,7 @@ class JusticeFromAboveSkill extends BaseSkill {
             captures[p] += crushed;
         }
 
-        // 2. Resolve captures on adjacent enemy groups
+        // 2. Resolve captures on adjacent enemy groups (Squatters can still crush things in normal engine loop)
         const opponentColor = p === BLACK ? WHITE : BLACK;
         const processedGroups = new Set();
 
@@ -76,7 +62,7 @@ class JusticeFromAboveSkill extends BaseSkill {
                         
                         if (!processedGroups.has(sig)) {
                             processedGroups.add(sig);
-                            if (group.liberties.length === 0) {
+                            if (group.liberties.length === 0 && !group.hasSquatter) {
                                 group.stones.forEach(([cx, cy]) => {
                                     board[cx][cy] = EMPTY;
                                     captures[p]++;
@@ -88,24 +74,32 @@ class JusticeFromAboveSkill extends BaseSkill {
             }
         });
 
-        // 3. Visuals and Finalization
+        // 3. Mark as Squatter in manager to make it permanently immortal
+        if (!manager.activeEffects.squatters) {
+            manager.activeEffects.squatters = [];
+        }
+        stones.forEach(s => {
+            manager.activeEffects.squatters.push({x: s.x, y: s.y, color: p, anchor: targetX === s.x && targetY === s.y});
+        });
+
+        // Add to giant stones for rendering as one massive block, but tagged as a squatter
         manager.activeEffects.giantStones.push({
             x: targetX,
             y: targetY,
-            color: p
+            color: p,
+            isSquatter: true
         });
 
-        playSkillSound('impact'); // loud crush
+        playSkillSound('impact'); 
         setTimeout(() => playStoneSound(), 100); 
 
         const label = p === BLACK ? 'Black' : 'White';
         const colLetter = String.fromCharCode(65 + targetX);
         const rowNumber = BOARD_SIZE - targetY;
         
-        let logMsg = `${label} dropped Justice from Above at ${colLetter}${rowNumber}`;
+        let logMsg = `${label} placed The Squatter at ${colLetter}${rowNumber}`;
         if (crushed > 0) logMsg += ` (Crushed ${crushed})`;
         
-        // Finalize using the top-left corner as the 'last move' focus
         finalizeTurn(logMsg, p === BLACK ? 'black' : 'white', targetX, targetY);
     }
 
@@ -121,10 +115,10 @@ class JusticeFromAboveSkill extends BaseSkill {
     
     getHighlightStyle() {
         return {
-            borderColor: 'rgba(255, 50, 50, 1)',
-            glowColor: 'rgba(255, 50, 50, 0.8)'
+            borderColor: 'rgba(255, 215, 0, 1)',
+            glowColor: 'rgba(255, 215, 0, 0.8)'
         };
     }
 }
 
-window.JusticeFromAboveSkill = JusticeFromAboveSkill;
+window.TheSquatterSkill = TheSquatterSkill;

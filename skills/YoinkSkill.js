@@ -11,7 +11,7 @@ class YoinkSkill extends BaseSkill {
      * @returns {boolean}
      */
     isValidTarget(x, y, step, selectedCell) {
-        // Can only retract your own stone
+        if (window.isSquatter(x, y)) return false;
         return board[x][y] === currentPlayer;
     }
 

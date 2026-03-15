@@ -4,6 +4,7 @@ class DustStoneSkill extends BaseSkill {
     }
 
     isValidTarget(x, y, step, selectedCell) {
+        if (window.isSquatter(x, y)) return false;
         const opponentColor = currentPlayer === BLACK ? WHITE : BLACK;
         return board[x][y] === opponentColor;
     }
