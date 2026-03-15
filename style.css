@@ -7,12 +7,18 @@
     --danger-color: #e24a4a;
 }
 
-/* Language Toggle */
-.lang-toggle {
+/* Top Bar Controls */
+.top-bar-controls {
     position: fixed;
     top: 20px;
     right: 20px;
     z-index: 3000;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.lang-toggle, .lobby-btn-small {
     padding: 0.5rem 1rem;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 8px;
@@ -26,9 +32,13 @@
     backdrop-filter: blur(8px);
 }
 
-.lang-toggle:hover {
+.lang-toggle:hover, .lobby-btn-small:hover {
     background: rgba(255, 255, 255, 0.18);
     transform: translateY(-1px);
+}
+
+.hidden {
+    display: none !important;
 }
 
 * {
