@@ -141,6 +141,12 @@ let roomCode = null;
 // Skills state
 const skillManager = new SkillManager();
 
+// Helper to check if a specific cell contains a 'Squatter'
+window.isSquatter = function(x, y) {
+    if (!skillManager || !skillManager.activeEffects || !skillManager.activeEffects.squatters) return false;
+    return skillManager.activeEffects.squatters.some(s => s.x === x && s.y === y);
+};
+
 // Draw round state
 let turnCount = 0;
 let nextDrawAt = 0;

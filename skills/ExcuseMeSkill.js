@@ -22,7 +22,6 @@ class ExcuseMeSkill extends BaseSkill {
         const opponentColor = currentPlayer === BLACK ? WHITE : BLACK;
         
         if (step === 1) {
-            if (board[x][y] !== currentPlayer) return false;
             // Select own stone adjacent to enemy
             if (board[x][y] === currentPlayer) {
                 const neighbors = getNeighbors(x, y);

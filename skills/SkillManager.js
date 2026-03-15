@@ -28,7 +28,8 @@ class SkillManager {
             noSlacking: null,
             oops: null,
             blindfolds: [],
-            giantStones: []
+            giantStones: [],
+            squatters: []
         };
 
         // Player hands: skills owned, ready to use
@@ -91,7 +92,8 @@ class SkillManager {
             noSlacking: null,
             oops: null,
             blindfolds: [],
-            giantStones: []
+            giantStones: [],
+            squatters: []
         };
     }
 
