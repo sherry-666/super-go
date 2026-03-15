@@ -430,6 +430,11 @@ function initGame(onlineIsTestMode = null) {
     clearLog();
     updateSkillUI();
     updateUI();
+    const box = document.getElementById('instruction-box');
+    if (box) {
+        box.textContent = t('instructionPlaceholder');
+        box.classList.remove('success', 'highlight');
+    }
     
     // Start animation loop if not already running
     if (!window.animationLoopId) {
@@ -1153,6 +1158,28 @@ function finalizeTurn(logMessage, logType, lastX = null, lastY = null) {
     checkDrawRound();
 }
 
+/**
+ * Handle success logic after a skill is applied
+ */
+function handleSkillApplied(skillId, endsTurn, x = null, y = null) {
+    playSkillSound('shimmer');
+    
+    const box = document.getElementById('instruction-box');
+    if (box) {
+        box.textContent = t('skillSuccessMsg');
+        box.classList.add('success');
+        box.classList.remove('highlight');
+    }
+
+    if (endsTurn) {
+        finalizeTurn(null, null, x, y);
+    } else {
+        drawBoard();
+        updateSkillUI();
+    }
+}
+
+
 function applyPass() {
     history.push(cloneBoard(board));
     if (history.length > 2) history.shift();
@@ -1563,6 +1590,12 @@ function tryPlaceStone(x, y) {
     // Valid move — apply it
     applyMove(x, y);
 
+    const box = document.getElementById('instruction-box');
+    if (box) {
+        box.textContent = t('instructionPlaceholder');
+        box.classList.remove('success', 'highlight');
+    }
+
     // Send to server if online
     if (gameMode === 'online') {
         wsSend('move', { x, y });
@@ -1706,13 +1739,34 @@ function updateSkillUI() {
             eternal_night: [t('skillEternalNightStep1')],
         };
         if (activeId && stepMsgs[activeId]) {
-            statusEl.textContent = stepMsgs[activeId][(skillManager.skillStep - 1)] || '';
+            const msg = stepMsgs[activeId][(skillManager.skillStep - 1)] || '';
+            statusEl.textContent = msg;
             statusEl.classList.remove('hidden');
+            
+            const box = document.getElementById('instruction-box');
+            if (box) {
+                box.textContent = msg;
+                box.classList.add('highlight');
+                box.classList.remove('success');
+            }
         } else if (skillManager.skillUsedThisTurn[currentPlayer]) {
             statusEl.textContent = t('skillUsed');
             statusEl.classList.remove('hidden');
+            
+            const box = document.getElementById('instruction-box');
+            if (box) {
+                box.textContent = t('skillUsed');
+                box.classList.add('success');
+                box.classList.remove('highlight');
+            }
         } else {
             statusEl.classList.add('hidden');
+            
+            const box = document.getElementById('instruction-box');
+            if (box && !box.classList.contains('success')) {
+                box.textContent = t('instructionPlaceholder');
+                box.classList.remove('highlight');
+            }
         }
     }
 }
