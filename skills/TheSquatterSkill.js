@@ -62,10 +62,12 @@ class TheSquatterSkill extends BaseSkill {
                         
                         if (!processedGroups.has(sig)) {
                             processedGroups.add(sig);
-                            if (group.liberties.length === 0 && !group.hasSquatter) {
+                            if (group.liberties.length === 0) {
                                 group.stones.forEach(([cx, cy]) => {
-                                    board[cx][cy] = EMPTY;
-                                    captures[p]++;
+                                    if (!window.isSquatter(cx, cy)) {
+                                        board[cx][cy] = EMPTY;
+                                        captures[p]++;
+                                    }
                                 });
                             }
                         }

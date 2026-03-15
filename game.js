@@ -1039,13 +1039,17 @@ function isValidMove(x, y, playerColor, currentBoard = board) {
     nextBoard[x][y] = playerColor;
     let capturesEnemy = false;
     
-    // Check if it captures enemy
+    // Check if it captures enemy (even groups with squatters lose their non-squatter stones)
     for(const [nx, ny] of getNeighbors(x, y)) {
         if(nextBoard[nx][ny] === enemyColor) {
             const enemyGroup = getGroup(nx, ny, nextBoard);
-            if(enemyGroup.liberties.length === 0 && !enemyGroup.hasSquatter) {
-                capturesEnemy = true;
-                break;
+            if(enemyGroup.liberties.length === 0) {
+                // Capturable if there's at least one non-squatter stone
+                const hasNonSquatter = enemyGroup.stones.some(([sx, sy]) => !window.isSquatter(sx, sy));
+                if (hasNonSquatter || !enemyGroup.hasSquatter) {
+                    capturesEnemy = true;
+                    break;
+                }
             }
         }
     }
@@ -1056,7 +1060,7 @@ function isValidMove(x, y, playerColor, currentBoard = board) {
     // If it doesn't capture, check its own liberties
     const myGroup = getGroup(x, y, nextBoard);
     if(myGroup.liberties.length === 0 && !myGroup.hasSquatter) {
-        return false; // Suicide attempt is invalid unless group has a Squatter
+        return false; // Suicide (squatter cells keep the group alive)
     }
     
     return true;
@@ -1071,10 +1075,13 @@ function applyMove(x, y) {
     for (const [nx, ny] of getNeighbors(x, y)) {
         if (nextBoard[nx][ny] === opponentColor) {
             const group = getGroup(nx, ny, nextBoard);
-            if (group.liberties.length === 0 && !group.hasSquatter) {
+            if (group.liberties.length === 0) {
                 group.stones.forEach(([cx, cy]) => {
-                    nextBoard[cx][cy] = EMPTY;
-                    capturedCount++;
+                    // Squatter cells are immortal — skip them
+                    if (!window.isSquatter(cx, cy)) {
+                        nextBoard[cx][cy] = EMPTY;
+                        capturedCount++;
+                    }
                 });
             }
         }
