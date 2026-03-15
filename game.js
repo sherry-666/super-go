@@ -18,6 +18,7 @@ const skillMeta = {
     oops:          { icon: '😜', nameKey: 'skillOops',           descKey: 'skillOopsDesc', tier: SkillTier.TIER1 },
     double_tap:    { icon: '⚔️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc', tier: SkillTier.TIER1 },
     blindfold:     { icon: '🌫️', nameKey: 'skillBlindfold',      descKey: 'skillBlindfoldDesc', tier: SkillTier.TIER1 },
+    mirage:        { icon: '🌫️', nameKey: 'skillMirage',         descKey: 'skillMirageDesc', tier: SkillTier.TIER2 },
     triple_salvo:  { icon: '🚀', nameKey: 'skillTripleSalvo',    descKey: 'skillTripleSalvoDesc', tier: SkillTier.TIER3 },
     justice_from_above: { icon: '☄️', nameKey: 'skillJustice',   descKey: 'skillJusticeDesc', tier: SkillTier.TIER3 },
 };
@@ -1530,6 +1531,7 @@ function updateSkillUI() {
             yoink:       [t('skillYoinkStep1')],
             double_tap:  [t('skillDoubleTapStep1'), t('skillDoubleTapStep2')],
             triple_salvo:[t('skillTripleSalvoStep1'), t('skillTripleSalvoStep2')],
+            mirage:      [t('skillMirageStep1')],
             justice_from_above: [t('skillJusticeStep1')],
         };
         if (activeId && stepMsgs[activeId]) {

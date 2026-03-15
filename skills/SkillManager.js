@@ -15,6 +15,7 @@ class SkillManager {
         this.registerSkill(new OopsSkill());
         this.registerSkill(new DoubleTapSkill());
         this.registerSkill(new BlindfoldSkill());
+        this.registerSkill(new MirageSkill());
         this.registerSkill(new TripleSalvoSkill());
         this.registerSkill(new JusticeFromAboveSkill());
 
