@@ -150,6 +150,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.startsWith('/test')) {
         const testControl = document.querySelector('.test-mode-control');
         if (testControl) testControl.style.display = 'flex';
+        // Auto-check if on /test for better UX
+        const toggle = document.getElementById('test-mode-toggle');
+        if (toggle) toggle.checked = true;
     }
 });
 
@@ -239,14 +242,18 @@ function connectWS(callback) {
 
 function connectAndHost() {
     document.getElementById('game-code').textContent = '-----';
+    const isTestMode = document.getElementById('test-mode-toggle').checked;
+    console.log(`Hosting game... Test Mode: ${isTestMode}`);
     connectWS(() => {
-        wsSend('host', {});
+        wsSend('host', { isTestMode });
     });
 }
 
 function connectAndJoin(code) {
+    const isTestMode = document.getElementById('test-mode-toggle').checked;
+    console.log(`Joining game ${code}... Test Mode: ${isTestMode}`);
     connectWS(() => {
-        wsSend('join', { code });
+        wsSend('join', { code, isTestMode });
     });
 }
 
@@ -279,11 +286,15 @@ function handleServerMessage(msg) {
             document.getElementById('online-code-label').textContent = 
                 roomCode ? `${t('room')}: ${roomCode}` : '';
             
-            initGame();
+            initGame(data.isTestMode);
             break;
 
         case 'error':
-            showJoinError(data.message);
+            if (data.message === 'mode_mismatch') {
+                showJoinError(t('modeMismatch'));
+            } else {
+                showJoinError(data.message);
+            }
             break;
 
         case 'move':
@@ -349,10 +360,11 @@ function handleServerMessage(msg) {
 }
 
 // ====================== Game Init ======================
-function initGame() {
+function initGame(onlineIsTestMode = null) {
     // Strictly stop lobby music during gameplay
     stopAllMusic();
 
+    // Game State
     board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(EMPTY));
     markedDead = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(false));
     territoryMap = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
@@ -373,15 +385,27 @@ function initGame() {
     skillManager.resetTurn(WHITE);
     skillManager.resetHands();
 
-    // Check Test Mode
-    const isTestMode = document.getElementById('test-mode-toggle').checked;
-    if (isTestMode) {
+    // Check Test Mode (Online uses server truth, Local uses toggle)
+    let finalTestMode = false;
+    if (gameMode === 'online' && onlineIsTestMode !== null) {
+        finalTestMode = onlineIsTestMode;
+    } else {
+        finalTestMode = document.getElementById('test-mode-toggle').checked;
+    }
+
+    if (finalTestMode) {
         const allSkillIds = Object.keys(skillManager.skills);
         allSkillIds.forEach(id => {
             skillManager.addSkillToHand(BLACK, id);
             skillManager.addSkillToHand(WHITE, id);
         });
-        addLog(t('testMode') + ' ACTIVATE: All skills unlocked.', 'system');
+        addLog(t('testMode') + ' ACTIVE: All skills unlocked.', 'system');
+        
+        // Indicate in UI
+        const codeLabel = document.getElementById('online-code-label');
+        if (codeLabel && gameMode === 'online') {
+            codeLabel.textContent += ` [${t('testMode')}]`;
+        }
     }
 
     hoveredCell = null;

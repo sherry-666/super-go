@@ -51,11 +51,15 @@ wss.on('connection', (ws) => {
         switch (type) {
             case 'host': {
                 const code = generateCode();
-                rooms.set(code, { host: ws, guest: null });
+                rooms.set(code, { 
+                    host: ws, 
+                    guest: null, 
+                    isTestMode: !!data.isTestMode 
+                });
                 ws._roomCode = code;
                 ws._role = 'host';
                 send(ws, 'hosted', { code });
-                console.log(`Room ${code} created`);
+                console.log(`Room ${code} created (Test Mode: ${!!data.isTestMode})`);
                 break;
             }
 
@@ -64,6 +68,11 @@ wss.on('connection', (ws) => {
                 const room = rooms.get(code);
                 if (!room) {
                     send(ws, 'error', { message: 'Room not found' });
+                    break;
+                }
+                if (room.isTestMode !== !!data.isTestMode) {
+                    console.log(`Room ${code} join REJECTED: Mode mismatch (Room: ${room.isTestMode}, Guest: ${!!data.isTestMode})`);
+                    send(ws, 'error', { message: 'mode_mismatch' });
                     break;
                 }
                 if (room.guest) {
@@ -76,9 +85,9 @@ wss.on('connection', (ws) => {
 
                 // Notify both players the game is starting
                 // Host is BLACK (1), Guest is WHITE (2)
-                send(room.host, 'start', { color: 1 });
-                send(room.guest, 'start', { color: 2 });
-                console.log(`Room ${code}: game started`);
+                send(room.host, 'start', { color: 1, isTestMode: room.isTestMode });
+                send(room.guest, 'start', { color: 2, isTestMode: room.isTestMode });
+                console.log(`Room ${code}: game started (Test Mode: ${room.isTestMode})`);
                 break;
             }
 
