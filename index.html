@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Go</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Minion+Pro:wght@400;600&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Language Toggle (global, always visible) -->
+    <button id="lang-toggle" class="lang-toggle">中文</button>
+
+    <!-- Lobby Overlay -->
+    <div id="lobby" class="lobby-overlay">
+        <div class="lobby-content">
+            <h1 class="lobby-title">Web Go</h1>
+            <p class="lobby-subtitle" data-i18n="subtitle">A classic game of Go</p>
+
+            <!-- Main menu -->
+            <div id="lobby-menu" class="lobby-section">
+                <button id="btn-play-local" class="btn lobby-btn" data-i18n="playLocal">⚫ Play Local</button>
+                <button id="btn-play-online" class="btn lobby-btn" data-i18n="playOnline">🌐 Play Online</button>
+            </div>
+
+            <!-- Online options -->
+            <div id="lobby-online" class="lobby-section hidden">
+                <button id="btn-host" class="btn lobby-btn" data-i18n="hostGame">Host Game</button>
+                <button id="btn-join-show" class="btn lobby-btn" data-i18n="joinGame">Join Game</button>
+                <button id="btn-online-back" class="btn lobby-btn-small" data-i18n="back">← Back</button>
+            </div>
+
+            <!-- Hosting: show code -->
+            <div id="lobby-hosting" class="lobby-section hidden">
+                <p class="lobby-label" data-i18n="yourGameCode">Your game code:</p>
+                <div class="game-code" id="game-code">-----</div>
+                <p class="lobby-waiting" data-i18n="waitingForOpponent">Waiting for opponent to join…</p>
+                <button id="btn-host-cancel" class="btn lobby-btn-small" data-i18n="cancel">Cancel</button>
+            </div>
+
+            <!-- Join: enter code -->
+            <div id="lobby-join" class="lobby-section hidden">
+                <p class="lobby-label" data-i18n="enterCode">Enter 5-digit game code:</p>
+                <input type="text" id="join-code-input" class="code-input" maxlength="5" placeholder="12345" autocomplete="off">
+                <div id="join-error" class="join-error hidden"></div>
+                <div class="lobby-join-buttons">
+                    <button id="btn-join-game" class="btn lobby-btn" data-i18n="join">Join</button>
+                    <button id="btn-join-back" class="btn lobby-btn-small" data-i18n="back">← Back</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game UI (hidden until game starts) -->
+    <div id="game-container" class="container hidden">
+        <header>
+            <h1>Web Go</h1>
+            <div id="online-indicator" class="online-indicator hidden">
+                <span id="online-color-label"></span>
+                <span id="online-code-label"></span>
+            </div>
+        </header>
+        
+        <main>
+            <div class="game-info">
+                <div class="player-box black active" id="player-black">
+                    <div class="stone-icon black"></div>
+                    <div class="player-details">
+                        <h2 data-i18n="black">Black</h2>
+                        <span class="captures"><span data-i18n="captures">Captures</span>: <strong id="black-captures">0</strong></span>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="btn-territory" class="btn" data-i18n="showTerritory">Show Territory</button>
+                    <button id="btn-pass" class="btn" data-i18n="pass">Pass</button>
+                    <button id="btn-resign" class="btn danger" data-i18n="resign">Resign</button>
+                    <button id="btn-show-log" class="btn" data-i18n="logsButton">📜 Logs</button>
+                </div>
+
+                <div class="player-box white" id="player-white">
+                    <div class="stone-icon white"></div>
+                    <div class="player-details">
+                        <h2 data-i18n="white">White</h2>
+                        <span class="captures"><span data-i18n="captures">Captures</span>: <strong id="white-captures">0</strong></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="board-area">
+                <div class="board-container">
+                    <canvas id="go-board" width="600" height="600"></canvas>
+                </div>
+                
+                <div class="skill-panel">
+                <span class="skill-bar-label" data-i18n="skills">Skills</span>
+                <div id="skill-hand" class="skill-hand">
+                    <span class="skill-hand-empty" id="skill-hand-empty">🎦 Draw skills to unlock them</span>
+                </div>
+                <span id="skill-status" class="skill-status hidden"></span>
+                </div>
+            
+            <div id="scoring-banner" class="scoring-banner hidden">
+                <p><strong data-i18n="scoringPhase">Scoring Phase:</strong> <span data-i18n="scoringInstructions">Click on dead stone groups to remove them from the board.</span></p>
+                <div class="scoring-controls">
+                    <button id="btn-accept-score" class="btn" data-i18n="acceptScore">Accept Score</button>
+                    <button id="btn-resume-game" class="btn" data-i18n="resumeGame">Resume Game</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Log Modal -->
+    <div id="log-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 540px; height: 480px; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 id="log-modal-title" style="margin: 0;" data-i18n="gameLogTitle">📜 Battle Log</h2>
+                <button id="btn-close-log" class="btn" style="padding: 0.3rem 0.8rem;">✕</button>
+            </div>
+            <div id="game-log-content" class="game-log-content" style="flex: 1; overflow-y: auto;">
+                <!-- Logs injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">Game Over!</h2>
+            <div id="modal-score" class="modal-score-details">
+                <!-- Score breaks down dynamically injected here -->
+            </div>
+            <button id="btn-play-again" class="btn" data-i18n="playAgain">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="confirm-modal-title">Confirm Action</h2>
+            <div id="confirm-modal-body" class="modal-score-details" style="text-align: left; margin-bottom: 20px;">
+                <!-- Message injected here -->
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-confirm-yes" class="btn" style="background-color: var(--primary-color);">Yes</button>
+                <button id="btn-confirm-no" class="btn" style="background-color: #6c757d;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill Draw Modal -->
+    <div id="skill-draw-modal" class="modal-overlay hidden">
+        <div class="draw-modal-content">
+            <div class="draw-modal-header">
+                <div id="draw-round-badge" class="draw-round-badge">✨ Skill Draw Round!</div>
+                <h2 id="draw-modal-player" class="draw-modal-player">Black is drawing...</h2>
+                <p id="draw-modal-subtitle" class="draw-modal-subtitle">Pick 1 skill to add to your hand</p>
+            </div>
+            <div id="draw-cards" class="draw-cards">
+                <!-- 3 skill cards injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="goscorer.js"></script>
+    <script src="i18n.js"></script>
+    <script src="skills/BaseSkill.js"></script>
+    <script src="skills/DustStoneSkill.js"></script>
+    <script src="skills/ExcuseMeSkill.js"></script>
+    <script src="skills/FlashMoveSkill.js"></script>
+    <script src="skills/YoinkSkill.js"></script>
+    <script src="skills/NoSlackingSkill.js"></script>
+    <script src="skills/OopsSkill.js"></script>
+    <script src="skills/DoubleTapSkill.js"></script>
+    <script src="skills/SkillManager.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
