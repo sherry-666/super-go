@@ -32,6 +32,7 @@ class FlashMoveSkill extends BaseSkill {
         
         board[x2][y2] = board[x1][y1];
         board[x1][y1] = EMPTY;
+        playStoneSound();
     }
 
     isInFlashRange(fromX, fromY, toX, toY) {

@@ -44,5 +44,6 @@ class ExcuseMeSkill extends BaseSkill {
         const temp = board[x1][y1];
         board[x1][y1] = board[x2][y2];
         board[x2][y2] = temp;
+        playStoneSound();
     }
 }

@@ -74,6 +74,20 @@ const translations = {
         logSkillUsed: '{player} used skill: {skill}',
         logSkillImpact: 'Outcome: {outcome}',
         logInvalidMove: '{player} attempted invalid move at {col}{row}',
+        skillHandPlaceholder: '🎦 Draw skills to unlock them',
+        useSkillQuery: 'Use this skill now?',
+        confirmAction: 'Confirm Action',
+        yesFlag: 'Yes',
+        cancelFlag: 'Cancel',
+        skillDrawTitle: '✨ Skill Draw Round!',
+        skillDrawSubtitle: 'Pick 1 skill to add to your hand',
+        isDrawing: '{player} is drawing...',
+        drewLabel: '{player} drew: {skill}',
+        activatedLabel: '{player} activated: {skill}',
+        usedLabel: '{player} used: {skill}',
+        turnLabel: 'Turn',
+        confirmPass: 'Are you sure you want to pass? If your opponent also passes, the game will end.',
+        confirmResign: 'Are you sure you want to resign?',
     },
     zh: {
         subtitle: '经典围棋游戏',
@@ -120,7 +134,7 @@ const translations = {
         skillCancelHint: '右键点击或按Esc取消',
         tier1: '一阶',
         skillExcuseMe: '借光借光',
-        skillExcuseMeDesc: '交换相邻的己子与敲子',
+        skillExcuseMeDesc: '交换相邻的己子与对手棋子',
         skillExcuseMeStep1: '点击你的棋子（与对方相邻）',
         skillExcuseMeStep2: '点击相邻的对方棋子交换',
         skillFlashMove: '看我闪现',
@@ -147,6 +161,20 @@ const translations = {
         logSkillUsed: '{player} 使用了技能：{skill}',
         logSkillImpact: '效果：{outcome}',
         logInvalidMove: '{player} 在 {col}{row} 的落子无效',
+        skillHandPlaceholder: '🎦 抽取技能以解锁',
+        useSkillQuery: '现在使用此技能？',
+        confirmAction: '确认行动',
+        yesFlag: '确认',
+        cancelFlag: '取消',
+        skillDrawTitle: '✨ 技能抽取回合！',
+        skillDrawSubtitle: '选择 1 个技能加入你的手牌',
+        isDrawing: '{player} 正在抽牌...',
+        drewLabel: '{player} 抽到了：{skill}',
+        activatedLabel: '{player} 激活了：{skill}',
+        usedLabel: '{player} 使用了：{skill}',
+        turnLabel: '回合',
+        confirmPass: '确定要跳过这一手吗？如果对手也跳过，游戏将结束。',
+        confirmResign: '确定要投降吗？',
     }
 };
 
@@ -161,7 +189,21 @@ function applyLanguage() {
             el.textContent = translations[currentLang][key];
         }
     });
+
+    // Support for HTML translations (for modals with formatting)
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        if (translations[currentLang][key]) {
+            el.innerHTML = translations[currentLang][key];
+        }
+    });
+
     document.getElementById('lang-toggle').textContent = t('langToggle');
+    
+    // Update dynamic UI components
+    if (typeof refreshUI === 'function') {
+        refreshUI();
+    }
 }
 
 document.getElementById('lang-toggle').addEventListener('click', () => {

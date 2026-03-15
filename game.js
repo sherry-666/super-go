@@ -1,7 +1,17 @@
-// ====================== Constants & State ======================
 const BOARD_SIZE = 19;
 let cellSize = 0;
-let padding = 20;
+let padding = 28; // Reduced from 40 for more board space
+
+// Global skill metadata for UI refresh
+const skillMeta = {
+    dust_stone:    { icon: '🌪️', nameKey: 'skillDustStone', descKey: 'skillDustStoneDesc' },
+    excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc' },
+    flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc' },
+    yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc' },
+    no_slacking:   { icon: '🚫', nameKey: 'skillNoSlacking',     descKey: 'skillNoSlackingDesc' },
+    oops:          { icon: '💦', nameKey: 'skillOops',           descKey: 'skillOopsDesc' },
+    double_tap:    { icon: '✌️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc' },
+};
 
 const KOMI = 6.5;
 const DAME = 3; // neutral/ambiguous territory marker
@@ -16,6 +26,7 @@ let showingTerritory = false;
 let gamePhase = 'playing'; // 'playing' or 'scoring'
 let territoryMap = [];
 let markedDead = [];
+let lastMove = null; // {x, y}
 
 // Online multiplayer state
 let gameMode = 'local'; // 'local' or 'online'
@@ -201,11 +212,15 @@ function handleServerMessage(msg) {
         case 'skill_pick':
             // Opponent picked a skill during draw round
             skillManager.addSkillToHand(data.player, data.skillId);
-            addLog(`${getPlayerLabel(data.player)} drew: ${data.skillId}`, 'system');
+            const playerLabel = getPlayerLabel(data.player);
+            addLog(t('drewLabel').replace('{player}', playerLabel).replace('{skill}', t(skillManager.getSkillById(data.skillId).nameKey)), 'system');
             break;
 
         case 'draw_round':
             // Opponent triggered a draw round — show my draw modal too
+            if (data && data.nextDrawAt) {
+                nextDrawAt = data.nextDrawAt;
+            }
             gamePhase = 'drawing';
             showDrawModal(myColor, () => {
                 gamePhase = 'playing';
@@ -234,6 +249,7 @@ function initGame() {
     history = [];
     consecutivePasses = 0;
     showingTerritory = false;
+    lastMove = null;
     gamePhase = 'playing';
     turnCount = 0;
     nextDrawAt = 20 + Math.floor(Math.random() * 11); // 10-15 rounds (20-30 turns)
@@ -286,6 +302,26 @@ function drawBoard() {
         }
     }
 
+    // Draw Coordinates
+    ctx.fillStyle = 'rgba(44, 26, 1, 0.7)'; // Slightly transparent for less clutter
+    ctx.font = 'bold 11px "Outfit", sans-serif'; 
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const labels = "ABCDEFGHJKLMNOPQRST"; // Standard Go skipping 'I'
+
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        // Horizontal labels (Letters A-T) - BOTTOM ONLY
+        const labelX = labels[i];
+        const xPos = padding + i * cellSize;
+        ctx.fillText(labelX, xPos, height - padding / 2);
+
+        // Vertical labels (Numbers 1-19) - LEFT ONLY
+        const labelY = (BOARD_SIZE - i).toString();
+        const yPos = padding + i * cellSize;
+        ctx.fillText(labelY, padding / 2, yPos);
+    }
+
     // Draw stones, dead markers, territory markers, and skill highlights
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
@@ -329,6 +365,28 @@ function drawBoard() {
             }
         }
     }
+
+    // Draw last move marker
+    if (lastMove && gamePhase === 'playing') {
+        drawLastMoveMarker(lastMove.x, lastMove.y);
+    }
+}
+
+function drawLastMoveMarker(x, y) {
+    const cx = padding + x * cellSize;
+    const cy = padding + y * cellSize;
+    
+    // A small white or black circle outline depending on the stone color
+    const stoneColor = board[x][y];
+    if (stoneColor === EMPTY) return;
+
+    ctx.save();
+    ctx.strokeStyle = stoneColor === BLACK ? 'white' : 'black';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, cellSize * 0.15, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
 }
 
 function drawDeadMarker(x, y) {
@@ -560,6 +618,7 @@ function applyMove(x, y) {
 
     board = nextBoard;
     captures[currentPlayer] += capturedCount;
+    lastMove = { x, y };
 
     // Log the move
     const playerLabel = currentPlayer === BLACK ? 'Black' : 'White';
@@ -576,6 +635,7 @@ function applyMove(x, y) {
     skillManager.resetTurn(currentPlayer);
     turnCount++;
     
+    playStoneSound(); 
     drawBoard();
     updateUI();
     updateSkillUI();
@@ -583,13 +643,19 @@ function applyMove(x, y) {
 }
 
 // Used by skills that manage their own board mutations but still need to end the turn
-function finalizeTurn(logMessage, logType) {
+function finalizeTurn(logMessage, logType, lastX = null, lastY = null) {
     history.push(cloneBoard(board));
     if (history.length > 2) history.shift();
 
     skillManager.clearEffects(currentPlayer);
 
     if (logMessage) addLog(logMessage, logType || 'system');
+
+    if (lastX !== null && lastY !== null) {
+        lastMove = { x: lastX, y: lastY };
+    } else {
+        lastMove = null; // Clear it if the skill doesn't specify a "last move" (e.g. removal)
+    }
 
     lastMovedColor = currentPlayer;
     currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
@@ -680,10 +746,20 @@ function applyResumeGame() {
 }
 
 // ====================== User Interaction (click, buttons) ======================
-canvas.addEventListener('click', (e) => {
+function getCanvasCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+    };
+}
+
+canvas.addEventListener('click', (e) => {
+    const coords = getCanvasCoordinates(e);
+    const x = coords.x;
+    const y = coords.y;
 
     const gridX = Math.round((x - padding) / cellSize);
     const gridY = Math.round((y - padding) / cellSize);
@@ -744,9 +820,9 @@ canvas.addEventListener('mousemove', (e) => {
         return;
     }
     
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const coords = getCanvasCoordinates(e);
+    const x = coords.x;
+    const y = coords.y;
     const gridX = Math.round((x - padding) / cellSize);
     const gridY = Math.round((y - padding) / cellSize);
     
@@ -771,6 +847,47 @@ canvas.addEventListener('mouseleave', () => {
         drawBoard();
     }
 });
+
+function playStoneSound() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const audioCtx = new AudioContext();
+        
+        // 1. Initial "click/snap" (High frequency)
+        const snapOsc = audioCtx.createOscillator();
+        const snapGain = audioCtx.createGain();
+        snapOsc.type = 'triangle';
+        snapOsc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        snapOsc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.02);
+        
+        snapGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        snapGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        
+        snapOsc.connect(snapGain);
+        snapGain.connect(audioCtx.destination);
+        
+        // 2. Main "thump" (Lower frequency, wood-like)
+        const thumpOsc = audioCtx.createOscillator();
+        const thumpGain = audioCtx.createGain();
+        thumpOsc.type = 'sine';
+        thumpOsc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        thumpOsc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
+        
+        thumpGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        thumpGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        
+        thumpOsc.connect(thumpGain);
+        thumpGain.connect(audioCtx.destination);
+        
+        snapOsc.start();
+        snapOsc.stop(audioCtx.currentTime + 0.05);
+        thumpOsc.start();
+        thumpOsc.stop(audioCtx.currentTime + 0.2);
+    } catch (e) {
+        console.log('Audio play failed', e);
+    }
+}
 
 function playDisallowSound() {
     try {
@@ -874,7 +991,39 @@ function updateUI() {
     
     document.getElementById('black-captures').innerText = captures[BLACK];
     document.getElementById('white-captures').innerText = captures[WHITE];
+    
+    // Update turn counter
+    const turnEl = document.getElementById('current-turn');
+    if (turnEl) turnEl.textContent = turnCount + 1;
+
     updateSkillUI();
+}
+
+function refreshUI() {
+    updateUI();
+    drawBoard();
+    
+    // If a modal is open, we might need to refresh its specific dynamic content
+    const drawModal = document.getElementById('skill-draw-modal');
+    if (drawModal && !drawModal.classList.contains('hidden')) {
+        const playerEl = document.getElementById('draw-modal-player');
+        const player = parseInt(playerEl.getAttribute('data-draw-player'));
+        if (!isNaN(player)) {
+            playerEl.textContent = t('isDrawing').replace('{player}', getPlayerLabel(player));
+        }
+
+        // Refresh existing cards
+        const cards = drawModal.querySelectorAll('.draw-card');
+        cards.forEach(card => {
+            const skillId = card.getAttribute('data-skill-id');
+            const meta = skillMeta[skillId];
+            if (meta) {
+                card.querySelector('.draw-card-tier').textContent = t('tier1');
+                card.querySelector('.draw-card-name').textContent = t(meta.nameKey);
+                card.querySelector('.draw-card-desc').textContent = t(meta.descKey);
+            }
+        });
+    }
 }
 
 // ====================== Game Log ======================
@@ -896,7 +1045,7 @@ function clearLog() {
 }
 
 function getPlayerLabel(player) {
-    return player === BLACK ? 'Black' : 'White';
+    return player === BLACK ? t('black') : t('white');
 }
 
 // ====================== Skills System ======================
@@ -992,10 +1141,10 @@ function handleSkillButtonClick(skillId) {
         const nameKey = skill ? skill.nameKey : skillId;
         const descKey = skill ? skill.descKey : '';
         const title = t(nameKey);
-        const msg = `<p>${t(descKey)}</p><p style="margin-top: 10px;"><strong>Use this skill now?</strong></p>`;
+        const msg = `<p>${t(descKey)}</p><p style="margin-top: 10px;"><strong>${t('useSkillQuery')}</strong></p>`;
         showConfirm(title, msg, () => {
             skillManager.toggleSkill(skillId, gameMode === 'online', wsSend);
-            addLog(`${getPlayerLabel(currentPlayer)} used: ${t(nameKey)}`, 'system');
+            addLog(t('usedLabel').replace('{player}', getPlayerLabel(currentPlayer)).replace('{skill}', t(nameKey)), 'system');
             updateSkillUI();
             drawBoard();
         });
@@ -1006,7 +1155,7 @@ function handleSkillButtonClick(skillId) {
     // log activation for targeting skills
     if (skillManager.activeSkill) {
         const skill = skillManager.getSkillById(skillId);
-        if (skill) addLog(`${getPlayerLabel(currentPlayer)} activated: ${t(skill.nameKey)}`, 'system');
+        if (skill) addLog(t('activatedLabel').replace('{player}', getPlayerLabel(currentPlayer)).replace('{skill}', t(skill.nameKey)), 'system');
     }
     updateSkillUI();
     drawBoard();
@@ -1019,13 +1168,14 @@ function checkDrawRound() {
     if (turnCount < nextDrawAt) return;
 
     // Schedule next draw
-    nextDrawAt = turnCount + 20 + Math.floor(Math.random() * 11); // 10-15 rounds (20-30 turns)
+    const cooldown = 20 + Math.floor(Math.random() * 11); // 10-15 rounds (20-30 turns)
+    nextDrawAt = turnCount + cooldown;
 
     if (gameMode === 'online') {
         // Only the player who just moved triggers the draw and notifies the opponent
         if (lastMovedColor !== myColor) return;
         gamePhase = 'drawing';
-        wsSend('draw_round', {});
+        wsSend('draw_round', { nextDrawAt: nextDrawAt });
         showDrawModal(myColor, () => {
             gamePhase = 'playing';
             updateSkillUI();
@@ -1048,19 +1198,13 @@ function showDrawModal(player, onComplete) {
     const cardsEl = document.getElementById('draw-cards');
 
     const options = skillManager.getDrawOptions(player, 3);
-    const playerLabel = player === BLACK ? '⚫ Black' : '⚪ White';
-    playerEl.textContent = `${playerLabel} is drawing...`;
+    const playerLabel = getPlayerLabel(player);
+    
+    playerEl.textContent = t('isDrawing').replace('{player}', playerLabel);
+    playerEl.setAttribute('data-draw-player', player); // Mark who's drawing for refresh
+    
     cardsEl.innerHTML = '';
 
-    const skillMeta = {
-        dust_stone:    { icon: '🌪️', nameKey: 'skillDustStone', descKey: 'skillDustStoneDesc' },
-        excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc' },
-        flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc' },
-        yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc' },
-        no_slacking:   { icon: '🚫', nameKey: 'skillNoSlacking',     descKey: 'skillNoSlackingDesc' },
-        oops:          { icon: '💦', nameKey: 'skillOops',           descKey: 'skillOopsDesc' },
-        double_tap:    { icon: '✌️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc' },
-    };
 
     if (options.length === 0) {
         // Player has all skills – skip
@@ -1073,6 +1217,7 @@ function showDrawModal(player, onComplete) {
         const meta = skillMeta[skillId] || { icon: '✨', nameKey: skillId, descKey: '' };
         const card = document.createElement('div');
         card.className = 'draw-card';
+        card.setAttribute('data-skill-id', skillId); // For refresh
         card.innerHTML = `
             <div class="draw-card-icon">${meta.icon}</div>
             <div class="draw-card-tier">${t('tier1')}</div>
@@ -1085,7 +1230,7 @@ function showDrawModal(player, onComplete) {
             card.classList.add('selected');
 
             skillManager.addSkillToHand(player, skillId);
-            addLog(`${player === BLACK ? 'Black' : 'White'} drew: ${ t(meta.nameKey)}`, 'system');
+            addLog(t('drewLabel').replace('{player}', getPlayerLabel(player)).replace('{skill}', t(meta.nameKey)), 'system');
 
             if (gameMode === 'online') {
                 wsSend('skill_pick', { player, skillId });
@@ -1105,17 +1250,21 @@ function showDrawModal(player, onComplete) {
 // ====================== Button Event Listeners ======================
 document.getElementById('btn-pass').addEventListener('click', () => {
     if (!isMyTurn()) return;
-    applyPass();
-    if (gameMode === 'online') {
-        wsSend('pass', {});
-    }
+    showConfirm(t('pass'), t('confirmPass'), () => {
+        applyPass();
+        if (gameMode === 'online') {
+            wsSend('pass', {});
+        }
+    });
 });
 
 document.getElementById('btn-resign').addEventListener('click', () => {
-    applyResign();
-    if (gameMode === 'online') {
-        wsSend('resign', {});
-    }
+    showConfirm(t('resign'), t('confirmResign'), () => {
+        applyResign();
+        if (gameMode === 'online') {
+            wsSend('resign', {});
+        }
+    });
 });
 
 document.getElementById('btn-territory').addEventListener('click', () => {
@@ -1153,8 +1302,11 @@ document.getElementById('btn-play-again').addEventListener('click', () => {
     }
 });
 
-function showModal(title, contentHtml) {
-    document.getElementById('modal-title').innerText = title;
+function showModal(titleKey, contentHtml) {
+    const titleEl = document.getElementById('modal-title');
+    titleEl.innerText = t(titleKey);
+    titleEl.setAttribute('data-i18n', titleKey);
+    
     document.getElementById('modal-score').innerHTML = contentHtml;
     document.getElementById('game-over-modal').classList.remove('hidden');
 }
@@ -1170,10 +1322,16 @@ document.getElementById('btn-close-log').addEventListener('click', () => {
 
 
 // ====================== Modals ======================
-function showConfirm(title, messageHtml, onConfirm) {
+function showConfirm(titleKey, messageKey, onConfirm) {
     const modal = document.getElementById('confirm-modal');
-    document.getElementById('confirm-modal-title').textContent = title;
-    document.getElementById('confirm-modal-body').innerHTML = messageHtml;
+    const titleEl = document.getElementById('confirm-modal-title');
+    const bodyEl = document.getElementById('confirm-modal-body');
+
+    titleEl.textContent = t(titleKey);
+    titleEl.setAttribute('data-i18n', titleKey);
+    
+    bodyEl.innerHTML = t(messageKey);
+    bodyEl.setAttribute('data-i18n-html', messageKey);
     
     const btnYes = document.getElementById('btn-confirm-yes');
     const btnNo = document.getElementById('btn-confirm-no');

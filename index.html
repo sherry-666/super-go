@@ -77,7 +77,6 @@
                     <button id="btn-territory" class="btn" data-i18n="showTerritory">Show Territory</button>
                     <button id="btn-pass" class="btn" data-i18n="pass">Pass</button>
                     <button id="btn-resign" class="btn danger" data-i18n="resign">Resign</button>
-                    <button id="btn-show-log" class="btn" data-i18n="logsButton">📜 Logs</button>
                 </div>
 
                 <div class="player-box white" id="player-white">
@@ -91,23 +90,31 @@
             
             <div class="board-area">
                 <div class="board-container">
-                    <canvas id="go-board" width="600" height="600"></canvas>
+                    <canvas id="go-board" width="700" height="700"></canvas>
                 </div>
                 
                 <div class="skill-panel">
                 <span class="skill-bar-label" data-i18n="skills">Skills</span>
                 <div id="skill-hand" class="skill-hand">
-                    <span class="skill-hand-empty" id="skill-hand-empty">🎦 Draw skills to unlock them</span>
+                    <span class="skill-hand-empty" id="skill-hand-empty" data-i18n="skillHandPlaceholder">🎦 Draw skills to unlock them</span>
                 </div>
                 <span id="skill-status" class="skill-status hidden"></span>
                 </div>
             
-            <div id="scoring-banner" class="scoring-banner hidden">
-                <p><strong data-i18n="scoringPhase">Scoring Phase:</strong> <span data-i18n="scoringInstructions">Click on dead stone groups to remove them from the board.</span></p>
-                <div class="scoring-controls">
-                    <button id="btn-accept-score" class="btn" data-i18n="acceptScore">Accept Score</button>
-                    <button id="btn-resume-game" class="btn" data-i18n="resumeGame">Resume Game</button>
+                <div id="scoring-banner" class="scoring-banner hidden">
+                    <p><strong data-i18n="scoringPhase">Scoring Phase:</strong> <span data-i18n="scoringInstructions">Click on dead stone groups to remove them from the board.</span></p>
+                    <div class="scoring-controls">
+                        <button id="btn-accept-score" class="btn" data-i18n="acceptScore">Accept Score</button>
+                        <button id="btn-resume-game" class="btn" data-i18n="resumeGame">Resume Game</button>
+                    </div>
                 </div>
+            </div> <!-- end board-area -->
+
+            <div class="bottom-panel">
+                <div class="turn-counter">
+                    <span data-i18n="turnLabel">Turn</span>: <strong id="current-turn">1</strong>
+                </div>
+                <button id="btn-show-log" class="btn" data-i18n="logsButton">📜 Logs</button>
             </div>
         </main>
     </div>
@@ -139,13 +146,13 @@
     <!-- Confirm Modal -->
     <div id="confirm-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h2 id="confirm-modal-title">Confirm Action</h2>
+            <h2 id="confirm-modal-title" data-i18n="confirmAction">Confirm Action</h2>
             <div id="confirm-modal-body" class="modal-score-details" style="text-align: left; margin-bottom: 20px;">
                 <!-- Message injected here -->
             </div>
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="btn-confirm-yes" class="btn" style="background-color: var(--primary-color);">Yes</button>
-                <button id="btn-confirm-no" class="btn" style="background-color: #6c757d;">Cancel</button>
+                <button id="btn-confirm-yes" class="btn" style="background-color: var(--primary-color);" data-i18n="yesFlag">Yes</button>
+                <button id="btn-confirm-no" class="btn" style="background-color: #6c757d;" data-i18n="cancelFlag">Cancel</button>
             </div>
         </div>
     </div>
@@ -154,9 +161,9 @@
     <div id="skill-draw-modal" class="modal-overlay hidden">
         <div class="draw-modal-content">
             <div class="draw-modal-header">
-                <div id="draw-round-badge" class="draw-round-badge">✨ Skill Draw Round!</div>
+                <div id="draw-round-badge" class="draw-round-badge" data-i18n="skillDrawTitle">✨ Skill Draw Round!</div>
                 <h2 id="draw-modal-player" class="draw-modal-player">Black is drawing...</h2>
-                <p id="draw-modal-subtitle" class="draw-modal-subtitle">Pick 1 skill to add to your hand</p>
+                <p id="draw-modal-subtitle" class="draw-modal-subtitle" data-i18n="skillDrawSubtitle">Pick 1 skill to add to your hand</p>
             </div>
             <div id="draw-cards" class="draw-cards">
                 <!-- 3 skill cards injected here -->

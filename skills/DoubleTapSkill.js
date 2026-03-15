@@ -61,16 +61,19 @@ class DoubleTapSkill extends BaseSkill {
 
         // Place the first stone
         placeAndCapture(selectedCell.x, selectedCell.y);
+        playStoneSound();
         // Place the second stone
-        placeAndCapture(targetX, targetY);
-
-        // End the turn without placing a third stone
-        const label = p === BLACK ? 'Black' : 'White';
-        const c1 = String.fromCharCode(65 + selectedCell.x);
-        const r1 = BOARD_SIZE - selectedCell.y;
-        const c2 = String.fromCharCode(65 + targetX);
-        const r2 = BOARD_SIZE - targetY;
-        finalizeTurn(`${label} Double Tap → ${c1}${r1} + ${c2}${r2}`, p === BLACK ? 'black' : 'white');
+        setTimeout(() => {
+            placeAndCapture(targetX, targetY);
+            playStoneSound();
+            
+            const label = p === BLACK ? 'Black' : 'White';
+            const c1 = String.fromCharCode(65 + selectedCell.x);
+            const r1 = BOARD_SIZE - selectedCell.y;
+            const c2 = String.fromCharCode(65 + targetX);
+            const r2 = BOARD_SIZE - targetY;
+            finalizeTurn(`${label} Double Tap → ${c1}${r1} + ${c2}${r2}`, p === BLACK ? 'black' : 'white', targetX, targetY);
+        }, 300); // 300ms gap for better auditory feel
     }
 
     getHighlightStyle(step) {

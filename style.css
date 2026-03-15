@@ -233,15 +233,17 @@ main {
 .game-info {
     display: flex;
     justify-content: space-between;
+    flex-wrap: nowrap; /* Forced one line */
     align-items: center;
     width: 100%;
-    max-width: 800px;
+    max-width: 1000px; /* Increased to fit everything */
     background: rgba(255, 255, 255, 0.05);
-    padding: 1rem 2rem;
+    padding: 0.75rem 1.5rem;
     border-radius: 20px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    gap: 1rem;
 }
 
 .player-box {
@@ -258,7 +260,8 @@ main {
     opacity: 1;
     background: rgba(255, 255, 255, 0.1);
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
-    transform: scale(1.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: scale(1.02);
 }
 
 .stone-icon {
@@ -289,6 +292,18 @@ main {
 .controls {
     display: flex;
     gap: 1rem;
+    align-items: center;
+}
+
+.turn-counter {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--board-color);
+    padding: 0.6rem 1.2rem;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
 }
 
 .btn {
@@ -321,11 +336,14 @@ main {
 
 .board-container {
     background-color: var(--board-color);
-    padding: 20px;
-    border-radius: 10px;
+    padding: 15px; /* Reduced padding from 20 */
+    border-radius: 12px;
     box-shadow: var(--board-shadow);
     border: 2px solid #5a3c11;
     position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-image: 
         repeating-linear-gradient(
             45deg,
@@ -339,6 +357,8 @@ main {
 canvas {
     display: block;
     cursor: pointer;
+    max-width: 100%;
+    height: auto;
 }
 
 /* ===================== Modal ===================== */
@@ -437,11 +457,29 @@ canvas {
     gap: 15px;
 }
 
+/* ===================== Bottom Panel ===================== */
+.bottom-panel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+    margin: 1.5rem auto; /* Centered with vertical margin */
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 /* ===================== Skill Panel (right side) ===================== */
 .board-area {
     display: flex;
-    gap: 1.5rem;
+    flex-direction: row; /* Board and Skill Panel side-by-side */
+    justify-content: center;
     align-items: flex-start;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    width: 100%;
 }
 
 .skill-panel {
