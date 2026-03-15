@@ -1,6 +1,6 @@
 class DustStoneSkill extends BaseSkill {
     constructor() {
-        super('dust_stone', 'skillDustStone', 'skillDustStoneDesc', 1);
+        super('dust_stone', 'skillDustStone', 'skillDustStoneDesc', SkillTier.TIER1);
     }
 
     isValidTarget(x, y, step, selectedCell) {

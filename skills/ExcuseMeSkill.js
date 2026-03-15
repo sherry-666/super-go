@@ -1,6 +1,6 @@
 class ExcuseMeSkill extends BaseSkill {
     constructor() {
-        super('excuse_me', 'skillExcuseMe', 'skillExcuseMeDesc', 1);
+        super('excuse_me', 'skillExcuseMe', 'skillExcuseMeDesc', SkillTier.TIER1);
     }
 
     getTotalSteps() {

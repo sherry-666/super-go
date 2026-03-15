@@ -1,6 +1,6 @@
 class FlashMoveSkill extends BaseSkill {
     constructor() {
-        super('flash_move', 'skillFlashMove', 'skillFlashMoveDesc', 1);
+        super('flash_move', 'skillFlashMove', 'skillFlashMoveDesc', SkillTier.TIER1);
     }
 
     getTotalSteps() {

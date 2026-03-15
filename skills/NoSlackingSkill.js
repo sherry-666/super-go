@@ -1,6 +1,6 @@
 class NoSlackingSkill extends BaseSkill {
     constructor() {
-        super('no_slacking', 'skillNoSlacking', 'skillNoSlackingDesc', 1);
+        super('no_slacking', 'skillNoSlacking', 'skillNoSlackingDesc', SkillTier.TIER1);
     }
 
     getTotalSteps() {

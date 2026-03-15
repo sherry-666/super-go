@@ -1,6 +1,6 @@
 class DoubleTapSkill extends BaseSkill {
     constructor() {
-        super('double_tap', 'skillDoubleTap', 'skillDoubleTapDesc', 1);
+        super('double_tap', 'skillDoubleTap', 'skillDoubleTapDesc', SkillTier.TIER1);
     }
 
     getTotalSteps() {

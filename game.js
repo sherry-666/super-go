@@ -1,16 +1,21 @@
 window.BOARD_SIZE = 19;
+window.SkillTier = Object.freeze({
+    TIER1: 1,
+    TIER2: 2
+});
 let cellSize = 0;
 let padding = 28; // Reduced from 40 for more board space
 
 // Global skill metadata for UI refresh
 const skillMeta = {
-    dust_stone:    { icon: '🌪️', nameKey: 'skillDustStone', descKey: 'skillDustStoneDesc' },
-    excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc' },
-    flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc' },
-    yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc' },
-    no_slacking:   { icon: '🚫', nameKey: 'skillNoSlacking',     descKey: 'skillNoSlackingDesc' },
-    oops:          { icon: '💦', nameKey: 'skillOops',           descKey: 'skillOopsDesc' },
-    double_tap:    { icon: '✌️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc' },
+    dust_stone:    { icon: '🌪️', nameKey: 'skillDustStone', descKey: 'skillDustStoneDesc', tier: SkillTier.TIER1 },
+    dust_stone_medium: { icon: '🌪️', nameKey: 'skillDustStoneMedium', descKey: 'skillDustStoneMediumDesc', tier: SkillTier.TIER2 },
+    excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
+    flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
+    yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
+    no_slacking:   { icon: '🚫', nameKey: 'skillNoSlacking',     descKey: 'skillNoSlackingDesc', tier: SkillTier.TIER1 },
+    oops:          { icon: '💦', nameKey: 'skillOops',           descKey: 'skillOopsDesc', tier: SkillTier.TIER1 },
+    double_tap:    { icon: '✌️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc', tier: SkillTier.TIER1 },
 };
 
 const KOMI = 6.5;
@@ -354,6 +359,18 @@ function initGame() {
     skillManager.resetTurn(BLACK);
     skillManager.resetTurn(WHITE);
     skillManager.resetHands();
+
+    // Check Test Mode
+    const isTestMode = document.getElementById('test-mode-toggle').checked;
+    if (isTestMode) {
+        const allSkillIds = Object.keys(skillManager.skills);
+        allSkillIds.forEach(id => {
+            skillManager.addSkillToHand(BLACK, id);
+            skillManager.addSkillToHand(WHITE, id);
+        });
+        addLog(t('testMode') + ' ACTIVATE: All skills unlocked.', 'system');
+    }
+
     hoveredCell = null;
     clearLog();
     updateSkillUI();
@@ -1177,13 +1194,14 @@ function updateSkillUI() {
 
         // Skill display metadata
         const skillMeta = {
-            dust_stone:    { icon: '🌪️', nameKey: 'skillDustStone', descKey: 'skillDustStoneDesc' },
-            excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc' },
-            flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc' },
-            yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc' },
-            no_slacking:   { icon: '🚫', nameKey: 'skillNoSlacking',     descKey: 'skillNoSlackingDesc' },
-            oops:          { icon: '💦', nameKey: 'skillOops',           descKey: 'skillOopsDesc' },
-            double_tap:    { icon: '✌️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc' },
+            dust_stone:    { icon: '🌪️', nameKey: 'skillDustStone', descKey: 'skillDustStoneDesc', tier: SkillTier.TIER1 },
+            dust_stone_medium: { icon: '🌪️', nameKey: 'skillDustStoneMedium', descKey: 'skillDustStoneMediumDesc', tier: SkillTier.TIER2 },
+            excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
+            flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
+            yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
+            no_slacking:   { icon: '🚫', nameKey: 'skillNoSlacking',     descKey: 'skillNoSlackingDesc', tier: SkillTier.TIER1 },
+            oops:          { icon: '💦', nameKey: 'skillOops',           descKey: 'skillOopsDesc', tier: SkillTier.TIER1 },
+            double_tap:    { icon: '✌️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc', tier: SkillTier.TIER1 },
         };
 
         // Remove duplicate IDs in hand (show each once
@@ -1198,8 +1216,9 @@ function updateSkillUI() {
             btn.disabled = !isUsable;
             btn.dataset.skillId = skillId;
             btn.title = t(meta.descKey);
+            const tierKey = `tier${meta.tier || 1}`;
             btn.innerHTML = `
-                <span class="skill-tier" data-i18n="tier1">${t('tier1')}</span>
+                <span class="skill-tier" data-i18n="${tierKey}">${t(tierKey)}</span>
                 <span class="skill-icon">${meta.icon}</span>
                 <span class="skill-name">${t(meta.nameKey)}</span>
                 <span class="skill-desc">${t(meta.descKey)}</span>
@@ -1214,6 +1233,7 @@ function updateSkillUI() {
         const activeId = skillManager.activeSkill ? skillManager.activeSkill.id : null;
         const stepMsgs = {
             dust_stone:  [t('skillActive')],
+            dust_stone_medium: [t('skillActive')],
             excuse_me:   [t('skillExcuseMeStep1'), t('skillExcuseMeStep2')],
             flash_move:  [t('skillFlashMoveStep1'), t('skillFlashMoveStep2')],
             yoink:       [t('skillYoinkStep1')],
@@ -1266,6 +1286,7 @@ function handleSkillButtonClick(skillId) {
 
 function checkDrawRound() {
     if (gamePhase !== 'playing') return;
+    if (document.getElementById('test-mode-toggle').checked) return; // Skip in Test Mode
     if (turnCount < nextDrawAt) return;
 
     // Schedule next draw
@@ -1319,9 +1340,10 @@ function showDrawModal(player, onComplete) {
         const card = document.createElement('div');
         card.className = 'draw-card';
         card.setAttribute('data-skill-id', skillId); // For refresh
+        const tierKey = `tier${meta.tier || 1}`;
         card.innerHTML = `
             <div class="draw-card-icon">${meta.icon}</div>
-            <div class="draw-card-tier">${t('tier1')}</div>
+            <div class="draw-card-tier">${t(tierKey)}</div>
             <div class="draw-card-name">${t(meta.nameKey)}</div>
             <div class="draw-card-desc">${t(meta.descKey)}</div>
         `;

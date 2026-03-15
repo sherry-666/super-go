@@ -1,6 +1,6 @@
 class OopsSkill extends BaseSkill {
     constructor() {
-        super('oops', 'skillOops', 'skillOopsDesc', 1);
+        super('oops', 'skillOops', 'skillOopsDesc', SkillTier.TIER1);
     }
 
     getTotalSteps() {

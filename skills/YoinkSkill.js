@@ -1,6 +1,6 @@
 class YoinkSkill extends BaseSkill {
     constructor() {
-        super('yoink', 'skillYoink', 'skillYoinkDesc', 1); // Skill ID, NameKey, DescKey, Tier
+        super('yoink', 'skillYoink', 'skillYoinkDesc', SkillTier.TIER1); // Skill ID, NameKey, DescKey, Tier
     }
 
     /**

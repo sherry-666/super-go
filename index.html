@@ -24,6 +24,17 @@
                 <button id="btn-play-local" class="btn lobby-btn" data-i18n="playLocal">⚫ Play Local</button>
                 <button id="btn-play-online" class="btn lobby-btn" data-i18n="playOnline">🌐 Play Online</button>
 
+                <div class="test-mode-control">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="test-mode-toggle">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="toggle-label-group">
+                        <span data-i18n="testMode">Test Mode</span>
+                        <small data-i18n="testModeDesc">All skills unlocked, no draw rounds</small>
+                    </div>
+                </div>
+
                 <div class="volume-control">
                     <span data-i18n="volume">Volume</span>
                     <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
@@ -183,6 +194,7 @@
     <script src="i18n.js"></script>
     <script src="skills/BaseSkill.js"></script>
     <script src="skills/DustStoneSkill.js"></script>
+    <script src="skills/DustStoneMediumSkill.js"></script>
     <script src="skills/ExcuseMeSkill.js"></script>
     <script src="skills/FlashMoveSkill.js"></script>
     <script src="skills/YoinkSkill.js"></script>

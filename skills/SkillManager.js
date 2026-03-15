@@ -7,6 +7,7 @@ class SkillManager {
         this.skillUsedThisTurn = { 1: false, 2: false }; // BLACK=1, WHITE=2
 
         this.registerSkill(new DustStoneSkill());
+        this.registerSkill(new DustStoneMediumSkill());
         this.registerSkill(new ExcuseMeSkill());
         this.registerSkill(new FlashMoveSkill());
         this.registerSkill(new YoinkSkill());
@@ -35,6 +36,10 @@ class SkillManager {
     }
 
     removeSkillFromHand(player, skillId) {
+        // In Test Mode, skills are never consumed
+        if (document.getElementById('test-mode-toggle') && document.getElementById('test-mode-toggle').checked) {
+            return;
+        }
         const idx = this.playerHands[player].indexOf(skillId);
         if (idx !== -1) this.playerHands[player].splice(idx, 1);
     }
