@@ -1,4 +1,4 @@
-const BOARD_SIZE = 19;
+window.BOARD_SIZE = 19;
 let cellSize = 0;
 let padding = 28; // Reduced from 40 for more board space
 
@@ -16,16 +16,103 @@ const skillMeta = {
 const KOMI = 6.5;
 const DAME = 3; // neutral/ambiguous territory marker
 
+// Music State
+let musicStarted = false;
+let musicEN = document.getElementById('lobby-music-en');
+let musicZH = document.getElementById('lobby-music-zh');
 
-let board = [];
+function getActiveMusic() {
+    return window.currentLang === 'zh' ? musicZH : musicEN;
+}
+
+function stopAllMusic() {
+    if (musicEN) musicEN.pause();
+    if (musicZH) musicZH.pause();
+}
+
+function syncLobbyMusic() {
+    console.log("Syncing lobby music. CurrentLang:", window.currentLang, "MusicStarted:", musicStarted);
+    if (!musicEN || !musicZH) {
+        musicEN = document.getElementById('lobby-music-en');
+        musicZH = document.getElementById('lobby-music-zh');
+    }
+    if (!musicEN || !musicZH) {
+        console.error("Lobby music elements still missing!");
+        return;
+    }
+
+    const lobby = document.getElementById('lobby');
+    const isLobbyVisible = lobby && !lobby.classList.contains('hidden');
+    
+    if (!isLobbyVisible) {
+        stopAllMusic();
+        return;
+    }
+
+    const active = getActiveMusic();
+    const inactive = window.currentLang === 'zh' ? musicEN : musicZH;
+    
+    // Hard stop inactive
+    if (inactive) {
+        inactive.pause();
+        try { inactive.currentTime = 0; } catch(e) {}
+    }
+    
+    // Play active if we can
+    if (active && musicStarted) {
+        console.log("Attempting to play active track:", active.id);
+        const slider = document.getElementById('volume-slider');
+        active.volume = slider ? slider.value : 0.5;
+        
+        if (active.paused) {
+            active.play().then(() => {
+                console.log("Playback successfully started for", active.id);
+            }).catch(e => {
+                console.warn("Music playback failed or blocked by policy", active.id, e);
+            });
+        }
+    }
+}
+
+function initMusic() {
+    const slider = document.getElementById('volume-slider');
+    const updateVolume = () => {
+        const vol = slider ? slider.value : 0.5;
+        if (musicEN) musicEN.volume = vol;
+        if (musicZH) musicZH.volume = vol;
+    };
+
+    if (slider) {
+        slider.addEventListener('input', updateVolume);
+    }
+    updateVolume();
+
+    // Auto-play workaround: start on first click
+    document.addEventListener('click', () => {
+        if (!musicStarted) {
+            console.log("First interaction, starting music");
+            musicStarted = true;
+            syncLobbyMusic();
+        }
+    }); // Bubble phase is safer for gesture chains
+}
+
+// Initialize music
+initMusic();
+
+
+// Initialized flag
+let gameInitialized = false;
+
+let board = Array(window.BOARD_SIZE).fill(null).map(() => Array(window.BOARD_SIZE).fill(EMPTY));
+let markedDead = Array(window.BOARD_SIZE).fill(null).map(() => Array(window.BOARD_SIZE).fill(false));
+let territoryMap = Array(window.BOARD_SIZE).fill(null).map(() => Array(window.BOARD_SIZE).fill(null));
 let currentPlayer = 1; // BLACK
 let captures = { 1: 0, 2: 0 };
 let history = [];
 let consecutivePasses = 0;
 let showingTerritory = false;
 let gamePhase = 'playing'; // 'playing' or 'scoring'
-let territoryMap = [];
-let markedDead = [];
 let lastMove = null; // {x, y}
 
 // Online multiplayer state
@@ -68,6 +155,10 @@ document.getElementById('btn-play-online').addEventListener('click', () => {
 
 document.getElementById('btn-online-back').addEventListener('click', () => {
     showLobbySection('lobby-menu');
+    // Ensure music is playing if it was started
+    if (lobbyMusic && musicStarted) {
+        lobbyMusic.play().catch(e => console.log("Music back resume blocked", e));
+    }
 });
 
 document.getElementById('btn-host').addEventListener('click', () => {
@@ -241,6 +332,9 @@ function handleServerMessage(msg) {
 
 // ====================== Game Init ======================
 function initGame() {
+    // Strictly stop lobby music during gameplay
+    stopAllMusic();
+
     board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(EMPTY));
     markedDead = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(false));
     territoryMap = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
@@ -323,24 +417,28 @@ function drawBoard() {
     }
 
     // Draw stones, dead markers, territory markers, and skill highlights
+    if (!board || !Array.isArray(board)) return;
+
     for (let i = 0; i < BOARD_SIZE; i++) {
+        if (!board[i] || !Array.isArray(board[i])) continue; // Defensive
         for (let j = 0; j < BOARD_SIZE; j++) {
-            if (board[i][j] !== EMPTY) {
-                drawStone(i, j, board[i][j]);
-                if (markedDead[i][j]) {
+            const stone = board[i][j];
+            if (stone !== EMPTY) {
+                drawStone(i, j, stone);
+                if (markedDead && markedDead[i] && markedDead[i][j]) {
                     drawDeadMarker(i, j);
                 }
                 // Skill: light green highlight on ALL valid targets
-                if (skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
+                if (skillManager && skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
                     drawSkillValidTarget(i, j);
                 }
                 // Skill: brighter hover highlight on the specific hovered stone
-                if (skillManager.activeSkill && hoveredCell && hoveredCell.x === i && hoveredCell.y === j) {
+                if (skillManager && skillManager.activeSkill && hoveredCell && hoveredCell.x === i && hoveredCell.y === j) {
                     drawSkillHighlight(i, j);
                 }
-            } else if (showingTerritory && territoryMap[i][j] !== null) {
+            } else if (showingTerritory && territoryMap && territoryMap[i] && territoryMap[i][j] !== null) {
                 drawTerritoryMarker(i, j, territoryMap[i][j]);
-            } else if (board[i][j] === EMPTY && skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
+            } else if (stone === EMPTY && skillManager && skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
                 // Highlight valid empty targets
                 drawSkillValidTarget(i, j);
             }
@@ -1002,6 +1100,9 @@ function updateUI() {
 function refreshUI() {
     updateUI();
     drawBoard();
+
+    // Sync Music
+    syncLobbyMusic();
     
     // If a modal is open, we might need to refresh its specific dynamic content
     const drawModal = document.getElementById('skill-draw-modal');
@@ -1168,7 +1269,7 @@ function checkDrawRound() {
     if (turnCount < nextDrawAt) return;
 
     // Schedule next draw
-    const cooldown = 20 + Math.floor(Math.random() * 11); // 10-15 rounds (20-30 turns)
+    const cooldown = 5 + Math.floor(Math.random() * 11); // 5-15 turns
     nextDrawAt = turnCount + cooldown;
 
     if (gameMode === 'online') {
@@ -1295,6 +1396,8 @@ document.getElementById('btn-play-again').addEventListener('click', () => {
         document.getElementById('lobby').classList.remove('hidden');
         showLobbySection('lobby-menu');
         gameMode = 'local';
+        // Resume music when back to lobby
+        syncLobbyMusic();
     }
     document.getElementById('game-over-modal').classList.add('hidden');
     if (gameMode === 'local') {

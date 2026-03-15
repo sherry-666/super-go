@@ -1,9 +1,10 @@
 // ====================== Internationalization ======================
-let currentLang = 'en';
+window.currentLang = 'zh';
 
 const translations = {
     en: {
-        subtitle: 'A classic game of Go',
+        title: 'Super Go',
+        subtitle: 'Master the board with powerful abilities',
         playLocal: '⚫ Play Local',
         playOnline: '🌐 Play Online',
         hostGame: 'Host Game',
@@ -88,9 +89,11 @@ const translations = {
         turnLabel: 'Turn',
         confirmPass: 'Are you sure you want to pass? If your opponent also passes, the game will end.',
         confirmResign: 'Are you sure you want to resign?',
+        volume: 'Volume',
     },
     zh: {
-        subtitle: '经典围棋游戏',
+        title: '超技能围棋',
+        subtitle: '运用强大技能，掌控全局',
         playLocal: '⚫ 本地对弈',
         playOnline: '🌐 在线对弈',
         hostGame: '创建房间',
@@ -175,26 +178,27 @@ const translations = {
         turnLabel: '回合',
         confirmPass: '确定要跳过这一手吗？如果对手也跳过，游戏将结束。',
         confirmResign: '确定要投降吗？',
+        volume: '音量',
     }
 };
 
 function t(key) {
-    return translations[currentLang][key] || translations['en'][key] || key;
+    return translations[window.currentLang][key] || translations['en'][key] || key;
 }
 
 function applyLanguage() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (translations[currentLang][key]) {
-            el.textContent = translations[currentLang][key];
+        if (translations[window.currentLang][key]) {
+            el.textContent = translations[window.currentLang][key];
         }
     });
 
     // Support for HTML translations (for modals with formatting)
     document.querySelectorAll('[data-i18n-html]').forEach(el => {
         const key = el.getAttribute('data-i18n-html');
-        if (translations[currentLang][key]) {
-            el.innerHTML = translations[currentLang][key];
+        if (translations[window.currentLang][key]) {
+            el.innerHTML = translations[window.currentLang][key];
         }
     });
 
@@ -207,6 +211,14 @@ function applyLanguage() {
 }
 
 document.getElementById('lang-toggle').addEventListener('click', () => {
-    currentLang = currentLang === 'en' ? 'zh' : 'en';
+    window.currentLang = window.currentLang === 'en' ? 'zh' : 'en';
     applyLanguage();
+    
+    // Safety sync for music
+    if (typeof syncLobbyMusic === 'function') {
+        syncLobbyMusic();
+    }
 });
+
+// Apply default language on load
+document.addEventListener('DOMContentLoaded', applyLanguage);
