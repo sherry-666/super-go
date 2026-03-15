@@ -392,9 +392,7 @@ function initGame(onlineIsTestMode = null) {
     document.getElementById('game-over-modal').classList.add('hidden');
     document.getElementById('scoring-banner').classList.add('hidden');
     document.querySelector('.controls').style.display = 'flex';
-    skillManager.resetTurn(BLACK);
-    skillManager.resetTurn(WHITE);
-    skillManager.resetHands();
+    skillManager.resetAll();
 
     // Check Test Mode (Online uses server truth, Local uses toggle)
     let finalTestMode = false;

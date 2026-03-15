@@ -81,6 +81,18 @@ class SkillManager {
         this.playerHands = { 1: [], 2: [] };
     }
 
+    resetAll() {
+        this.resetTurn(1);
+        this.resetTurn(2);
+        this.resetHands();
+        this.activeEffects = {
+            noSlacking: null,
+            oops: null,
+            blindfolds: [],
+            giantStones: []
+        };
+    }
+
     toggleSkill(skillId, isOnlineGame, wsSendCallback) {
         if (this.activeSkill && this.activeSkill.id === skillId) {
             this.cancelActiveSkill();
