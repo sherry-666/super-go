@@ -68,4 +68,15 @@ class BaseSkill {
         }
         return false;
     }
+    /**
+     * Returns an array of {x, y} coordinates affected by the skill at the current step.
+     * @param {number} x - The column index
+     * @param {number} y - The row index
+     * @param {number} step - The current multi-step index
+     * @param {Object|null} selectedCell - The first stone selected, if applicable
+     * @returns {Array<{x: number, y: number}>}
+     */
+    getAffectedCells(x, y, step, selectedCell) {
+        return [{ x, y }];
+    }
 }

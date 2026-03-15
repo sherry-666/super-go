@@ -317,7 +317,12 @@ function handleServerMessage(msg) {
             // Opponent picked a skill during draw round
             skillManager.addSkillToHand(data.player, data.skillId);
             const playerLabel = getPlayerLabel(data.player);
-            addLog(t('drewLabel').replace('{player}', playerLabel).replace('{skill}', t(skillManager.getSkillById(data.skillId).nameKey)), 'system');
+            // Hide opponent skill from log in online mode
+            if (gameMode === 'online' && data.player !== myColor) {
+                addLog(t('drewGenericLabel').replace('{player}', playerLabel), 'system');
+            } else {
+                addLog(t('drewLabel').replace('{player}', playerLabel).replace('{skill}', t(skillManager.getSkillById(data.skillId).nameKey)), 'system');
+            }
             break;
 
         case 'draw_round':
@@ -444,6 +449,16 @@ function drawBoard() {
     // Draw stones, dead markers, territory markers, and skill highlights
     if (!board || !Array.isArray(board)) return;
 
+    // Cache affected cells for hover to avoid repeated calls in the loop
+    let affectedCells = [];
+    if (skillManager && skillManager.activeSkill && hoveredCell) {
+        if (skillManager.isValidTargetHover(hoveredCell.x, hoveredCell.y)) {
+            affectedCells = skillManager.getAffectedCells(hoveredCell.x, hoveredCell.y);
+        }
+    }
+
+    const highlightStyle = skillManager.getHighlightStyle();
+
     for (let i = 0; i < BOARD_SIZE; i++) {
         if (!board[i] || !Array.isArray(board[i])) continue; // Defensive
         for (let j = 0; j < BOARD_SIZE; j++) {
@@ -453,19 +468,22 @@ function drawBoard() {
                 if (markedDead && markedDead[i] && markedDead[i][j]) {
                     drawDeadMarker(i, j);
                 }
-                // Skill: light green highlight on ALL valid targets
-                if (skillManager && skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
-                    drawSkillValidTarget(i, j);
-                }
-                // Skill: brighter hover highlight on the specific hovered stone
-                if (skillManager && skillManager.activeSkill && hoveredCell && hoveredCell.x === i && hoveredCell.y === j) {
-                    drawSkillHighlight(i, j);
+                // Skill: brighter hover highlight on the specific hovered stones (AOE)
+                const isAffected = affectedCells.some(c => c.x === i && c.y === j);
+                if (isAffected) {
+                    drawSkillHighlight(i, j, highlightStyle);
                 }
             } else if (showingTerritory && territoryMap && territoryMap[i] && territoryMap[i][j] !== null) {
                 drawTerritoryMarker(i, j, territoryMap[i][j]);
-            } else if (stone === EMPTY && skillManager && skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
-                // Highlight valid empty targets
-                drawSkillValidTarget(i, j);
+            } else if (stone === EMPTY) {
+                // Check if AOE highlight applies even to empty cells
+                const isAffected = affectedCells.some(c => c.x === i && c.y === j);
+                if (isAffected) {
+                    drawSkillHighlight(i, j, highlightStyle);
+                } else if (skillManager && skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
+                    // Highlight valid empty targets with standard green
+                    drawSkillValidTarget(i, j);
+                }
             }
             
             // Draw No Slacking indicator Zone
@@ -566,17 +584,12 @@ function drawSkillValidTarget(x, y) {
     ctx.restore();
 }
 
-function drawSkillHighlight(x, y) {
-    if (!skillManager.activeSkill) return;
-    
-    // Check if the current hovered spot is a valid target
-    if (!skillManager.isValidTargetHover(x, y)) return;
+function drawSkillHighlight(x, y, style) {
+    if (!style) return;
 
     const cx = padding + x * cellSize;
     const cy = padding + y * cellSize;
     const radius = cellSize * 0.48;
-    
-    const style = skillManager.getHighlightStyle();
     
     ctx.save();
     ctx.strokeStyle = style.borderColor;

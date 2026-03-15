@@ -164,6 +164,11 @@ class SkillManager {
         return this.activeSkill.isValidTarget(x, y, this.skillStep, this.skillSelectedCell);
     }
 
+    getAffectedCells(x, y) {
+        if (!this.activeSkill) return [];
+        return this.activeSkill.getAffectedCells(x, y, this.skillStep, this.skillSelectedCell);
+    }
+
     getHighlightStyle() {
         if (!this.activeSkill) return null;
         return this.activeSkill.getHighlightStyle(this.skillStep);

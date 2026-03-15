@@ -867,7 +867,22 @@ canvas {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    min-height: 80px;
+    max-height: 560px; /* Aligns with board height */
+    overflow-y: auto;
+    padding-right: 0.5rem; /* Room for scrollbar */
+}
+
+/* Custom Scrollbar for skills */
+.skill-hand::-webkit-scrollbar {
+    width: 6px;
+}
+.skill-hand::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+}
+.skill-hand::-webkit-scrollbar-thumb {
+    background: rgba(220, 175, 109, 0.3); /* Match board/skill color */
+    border-radius: 4px;
 }
 
 .skill-hand-empty {
