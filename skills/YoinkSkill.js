@@ -12,6 +12,7 @@ class YoinkSkill extends BaseSkill {
      */
     isValidTarget(x, y, step, selectedCell) {
         if (window.isSquatter(x, y)) return false;
+        // Can only retract your own stone
         return board[x][y] === currentPlayer;
     }
 
@@ -25,6 +26,11 @@ class YoinkSkill extends BaseSkill {
     applyEffect(step, targetX, targetY, selectedCell, manager) {
         // "Retract" the stone by making the cell empty.
         board[targetX][targetY] = EMPTY;
+        
+        // Immediately redraw board so the opponent sees the skill effect right away
+        if (typeof drawBoard === 'function') {
+            drawBoard();
+        }
     }
 
     getHighlightStyle(step) {

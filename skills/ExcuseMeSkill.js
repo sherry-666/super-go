@@ -46,5 +46,20 @@ class ExcuseMeSkill extends BaseSkill {
         board[x1][y1] = board[x2][y2];
         board[x2][y2] = temp;
         playStoneSound();
+
+        // Broadcast effect immediately for opponent
+        if (typeof drawBoard === 'function') {
+            drawBoard();
+        }
+        
+        // Temporarily highlight the two swapped stones to make it obvious
+        if (typeof drawSkillHighlight === 'function') {
+            const highlightConfig = {
+                borderColor: 'rgba(100, 180, 255, 0.9)',
+                glowColor: 'rgba(100, 180, 255, 0.6)'
+            };
+            drawSkillHighlight(x1, y1, highlightConfig);
+            drawSkillHighlight(x2, y2, highlightConfig);
+        }
     }
 }

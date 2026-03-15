@@ -400,6 +400,7 @@ function initGame(onlineIsTestMode = null) {
     document.getElementById('game-over-modal').classList.add('hidden');
     document.getElementById('scoring-banner').classList.add('hidden');
     document.querySelector('.controls').style.display = 'flex';
+    document.getElementById('btn-return-lobby').classList.remove('hidden');
     skillManager.resetAll();
 
     // Check Test Mode (Online uses server truth, Local uses toggle)
@@ -1878,22 +1879,38 @@ document.getElementById('btn-resume-game').addEventListener('click', () => {
     }
 });
 
-document.getElementById('btn-play-again').addEventListener('click', () => {
-    if (gameMode === 'online') {
-        // Go back to lobby
-        if (ws) { ws.close(); ws = null; }
-        document.getElementById('game-container').classList.add('hidden');
-        document.getElementById('lobby').classList.remove('hidden');
-        showLobbySection('lobby-menu');
-        gameMode = 'local';
-        // Resume music when back to lobby
-        syncLobbyMusic();
-    }
+function returnToLobby() {
+    if (ws) { ws.close(); ws = null; }
+    document.getElementById('game-container').classList.add('hidden');
     document.getElementById('game-over-modal').classList.add('hidden');
-    if (gameMode === 'local') {
-        initGame();
+    document.getElementById('lobby').classList.remove('hidden');
+    document.getElementById('btn-return-lobby').classList.add('hidden');
+    showLobbySection('lobby-menu');
+    gameMode = 'local';
+    syncLobbyMusic();
+}
+
+document.getElementById('btn-play-again').addEventListener('click', () => {
+    document.getElementById('game-over-modal').classList.add('hidden');
+    if (gameMode === 'online') {
+        if (ws) {
+            wsSend('pass', {}); // As a proxy to let the other person know or simply let them click Play Again too.
+        }
+    }
+    initGame();
+});
+
+document.getElementById('btn-return-lobby').addEventListener('click', () => {
+    if (gamePhase === 'playing' && turnCount > 1) {
+        showConfirm(t('returnLobby'), "Quit to Lobby?", () => {
+            returnToLobby();
+        });
+    } else {
+        returnToLobby();
     }
 });
+
+document.getElementById('btn-modal-return-lobby').addEventListener('click', returnToLobby);
 
 function showModal(titleKey, contentHtml) {
     const titleEl = document.getElementById('modal-title');

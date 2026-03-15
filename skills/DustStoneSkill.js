@@ -12,5 +12,8 @@ class DustStoneSkill extends BaseSkill {
     applyEffect(step, targetX, targetY, selectedCell) {
         board[targetX][targetY] = EMPTY;
         captures[currentPlayer]++;
+        if (typeof drawBoard === 'function') {
+            drawBoard();
+        }
     }
 }

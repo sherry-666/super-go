@@ -63,6 +63,9 @@ class DoubleTapSkill extends BaseSkill {
         // Place the first stone
         placeAndCapture(selectedCell.x, selectedCell.y);
         playStoneSound();
+        if (typeof drawBoard === 'function') {
+            drawBoard();
+        }
         // Place the second stone
         setTimeout(() => {
             placeAndCapture(targetX, targetY);

@@ -20,6 +20,9 @@ class DustStoneMediumSkill extends BaseSkill {
                 }
             }
         }
+        if (typeof drawBoard === 'function') {
+            drawBoard();
+        }
     }
 
     getAffectedCells(x, y, step, selectedCell) {

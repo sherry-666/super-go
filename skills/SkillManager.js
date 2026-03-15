@@ -96,7 +96,6 @@ class SkillManager {
             squatters: []
         };
     }
-
     toggleSkill(skillId, isOnlineGame, wsSendCallback) {
         if (this.activeSkill && this.activeSkill.id === skillId) {
             this.cancelActiveSkill();

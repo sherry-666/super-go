@@ -34,6 +34,11 @@ class FlashMoveSkill extends BaseSkill {
         board[x2][y2] = board[x1][y1];
         board[x1][y1] = EMPTY;
         playStoneSound();
+        
+        // Immediately redraw board so the opponent sees the skill effect right away
+        if (typeof drawBoard === 'function') {
+            drawBoard();
+        }
     }
 
     isInFlashRange(fromX, fromY, toX, toY) {
