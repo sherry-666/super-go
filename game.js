@@ -1,7 +1,8 @@
 window.BOARD_SIZE = 19;
 window.SkillTier = Object.freeze({
     TIER1: 1,
-    TIER2: 2
+    TIER2: 2,
+    TIER3: 3
 });
 let cellSize = 0;
 let padding = 28; // Reduced from 40 for more board space
@@ -14,8 +15,10 @@ const skillMeta = {
     flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
     yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
     no_slacking:   { icon: '🚫', nameKey: 'skillNoSlacking',     descKey: 'skillNoSlackingDesc', tier: SkillTier.TIER1 },
-    oops:          { icon: '💦', nameKey: 'skillOops',           descKey: 'skillOopsDesc', tier: SkillTier.TIER1 },
-    double_tap:    { icon: '✌️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc', tier: SkillTier.TIER1 },
+    oops:          { icon: '😜', nameKey: 'skillOops',           descKey: 'skillOopsDesc', tier: SkillTier.TIER1 },
+    double_tap:    { icon: '⚔️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc', tier: SkillTier.TIER1 },
+    blindfold:     { icon: '🌫️', nameKey: 'skillBlindfold',      descKey: 'skillBlindfoldDesc', tier: SkillTier.TIER1 },
+    triple_salvo:  { icon: '🚀', nameKey: 'skillTripleSalvo',    descKey: 'skillTripleSalvoDesc', tier: SkillTier.TIER3 },
 };
 
 const KOMI = 6.5;
@@ -319,9 +322,10 @@ function handleServerMessage(msg) {
             break;
 
         case 'skill':
-            skillManager.applyRemoteSkill(data.skill, data);
-            updateSkillUI();
-            drawBoard();
+            const skillResult = skillManager.applyRemoteSkill(data.skill, data);
+            if (skillResult.applied) {
+                handleSkillApplied(skillResult.skillId, skillResult.endsTurn);
+            }
             break;
 
         case 'skill_pick':
@@ -412,7 +416,25 @@ function initGame(onlineIsTestMode = null) {
     clearLog();
     updateSkillUI();
     updateUI();
-    drawBoard();
+    
+    // Start animation loop if not already running
+    if (!window.animationLoopId) {
+        animate();
+    }
+}
+
+// ====================== Animation ======================
+function animate() {
+    window.animationLoopId = requestAnimationFrame(animate);
+    
+    // Check if we actually need to redraw for animations
+    const hasActiveFogs = skillManager && skillManager.activeEffects.blindfolds && skillManager.activeEffects.blindfolds.length > 0;
+    const isTargeting = skillManager && skillManager.activeSkill;
+    
+    // We only redraw everything if there's movement to show
+    if (hasActiveFogs || isTargeting) {
+        drawBoard();
+    }
 }
 
 // ====================== Drawing ======================
@@ -531,10 +553,67 @@ function drawBoard() {
         }
     }
 
-    // Draw last move marker
+    // Draw last move marker (BEFORE fog, so fog can hide it if needed)
     if (lastMove && gamePhase === 'playing') {
         drawLastMoveMarker(lastMove.x, lastMove.y);
     }
+
+    // Draw Blindfold Fogs
+    if (skillManager.activeEffects.blindfolds) {
+        skillManager.activeEffects.blindfolds.forEach(fog => {
+            // In online mode, the owner shouldn't see the fog
+            const isOwner = (gameMode === 'online' && myColor === fog.owner);
+            if (!isOwner) {
+                drawFog(fog.x, fog.y, fog.size || 2);
+            }
+        });
+    }
+}
+
+function drawFog(x, y, gridSize = 2) {
+    const fogX = padding + x * cellSize - cellSize * 0.5;
+    const fogY = padding + y * cellSize - cellSize * 0.5;
+    const size = cellSize * gridSize;
+    const time = Date.now() / 1000;
+
+    ctx.save();
+    
+    // Main volume with slight pulse and movement
+    const pulse = Math.sin(time * 1.5) * 5;
+    const driftX = Math.cos(time * 0.8) * 4;
+    const driftY = Math.sin(time * 0.8) * 4;
+    
+    const grad = ctx.createRadialGradient(
+        fogX + size/2 + driftX, fogY + size/2 + driftY, 0,
+        fogX + size/2, fogY + size/2, (size/1.2) + pulse
+    );
+    grad.addColorStop(0, 'rgba(80, 80, 100, 1)'); // Full opacity
+    grad.addColorStop(1, 'rgba(30, 30, 50, 1)');  // Full opacity
+    
+    ctx.fillStyle = grad;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(fogX, fogY, size, size);
+
+    // Dynamic Whispies/Clouds
+    ctx.globalCompositeOperation = 'screen';
+    for(let i=0; i<8; i++) {
+        const speed = 0.5 + (i * 0.1);
+        const orbitRadius = cellSize * 0.4;
+        const angle = time * speed + (i * Math.PI / 4);
+        
+        const wx = fogX + size/2 + Math.cos(angle) * orbitRadius * (1 + Math.sin(time * 0.5) * 0.2);
+        const wy = fogY + size/2 + Math.sin(angle) * orbitRadius * (1 + Math.cos(time * 0.5) * 0.2);
+        
+        const wr = cellSize * (0.5 + Math.sin(time + i) * 0.1);
+        
+        ctx.fillStyle = `rgba(200, 200, 220, ${0.1 + Math.sin(time * 2 + i) * 0.05})`;
+        ctx.beginPath();
+        ctx.arc(wx, wy, wr, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.restore();
 }
 
 function drawLastMoveMarker(x, y) {
@@ -789,6 +868,7 @@ function applyMove(x, y) {
     addLog(logMsg, currentPlayer === BLACK ? 'black' : 'white');
 
     lastMovedColor = currentPlayer;
+    skillManager.decrementEffects(currentPlayer);
     currentPlayer = opponentColor;
     consecutivePasses = 0;
     showingTerritory = false;
@@ -818,13 +898,14 @@ function finalizeTurn(logMessage, logType, lastX = null, lastY = null) {
     }
 
     lastMovedColor = currentPlayer;
+    skillManager.decrementEffects(currentPlayer);
     currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
     consecutivePasses = 0;
     showingTerritory = false;
     territoryMap = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
     skillManager.resetTurn(currentPlayer);
     turnCount++;
-
+    
     drawBoard();
     updateUI();
     updateSkillUI();
@@ -841,6 +922,7 @@ function applyPass() {
     const playerLabel = currentPlayer === BLACK ? 'Black' : 'White';
     addLog(`${playerLabel} passed`, currentPlayer === BLACK ? 'black' : 'white');
 
+    skillManager.decrementEffects(currentPlayer);
     currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
     skillManager.resetTurn(currentPlayer);
     consecutivePasses++;
@@ -928,13 +1010,32 @@ canvas.addEventListener('click', (e) => {
         if (gamePhase === 'playing') {
             if (skillManager.activeSkill && isMyTurn()) {
                 // Skill targeting mode (delegate to manager)
-                const handled = skillManager.handleTargetClick(gridX, gridY, gameMode === 'online', wsSend);
-                if (handled) {
+                const result = skillManager.handleTargetClick(gridX, gridY, gameMode === 'online', wsSend);
+                if (result.applied) {
+                    handleSkillApplied(result.skillId, result.endsTurn, gridX, gridY);
+                } else {
                     drawBoard();
                     updateSkillUI();
                 }
             } else if (isMyTurn()) {
-                if (board[gridX][gridY] === EMPTY) {
+                // Check Blindfold fog overlap
+                const inFog = skillManager.activeEffects.blindfolds.some(fog => {
+                    // Only apply penalty if the active player is NOT the owner
+                    if (gameMode === 'online' && currentPlayer === fog.owner) return false;
+                    
+                    const size = fog.size || 2;
+                    return gridX >= fog.x && gridX < fog.x + size && gridY >= fog.y && gridY < fog.y + size;
+                });
+
+                if (inFog && board[gridX][gridY] !== EMPTY) {
+                    // Forced skip!
+                    playDisallowSound();
+                    showSkillPopup(t('fogOverlap'), true);
+                    if (gameMode === 'online') {
+                        wsSend('pass', {});
+                    }
+                    applyPass();
+                } else if (board[gridX][gridY] === EMPTY) {
                     tryPlaceStone(gridX, gridY);
                 } else {
                     playDisallowSound(); // Cell occupied
@@ -1319,17 +1420,7 @@ function updateSkillUI() {
     } else {
         if (emptyEl) emptyEl.style.display = 'none';
 
-        // Skill display metadata
-        const skillMeta = {
-            dust_stone:    { icon: '🌪️', nameKey: 'skillDustStone', descKey: 'skillDustStoneDesc', tier: SkillTier.TIER1 },
-            dust_stone_medium: { icon: '🌪️', nameKey: 'skillDustStoneMedium', descKey: 'skillDustStoneMediumDesc', tier: SkillTier.TIER2 },
-            excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
-            flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
-            yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
-            no_slacking:   { icon: '🚫', nameKey: 'skillNoSlacking',     descKey: 'skillNoSlackingDesc', tier: SkillTier.TIER1 },
-            oops:          { icon: '💦', nameKey: 'skillOops',           descKey: 'skillOopsDesc', tier: SkillTier.TIER1 },
-            double_tap:    { icon: '✌️', nameKey: 'skillDoubleTap',      descKey: 'skillDoubleTapDesc', tier: SkillTier.TIER1 },
-        };
+        // Unique logic per skill using global skillMeta
 
         // Remove duplicate IDs in hand (show each once
         const uniqueHand = [...new Set(hand)];
@@ -1365,6 +1456,7 @@ function updateSkillUI() {
             flash_move:  [t('skillFlashMoveStep1'), t('skillFlashMoveStep2')],
             yoink:       [t('skillYoinkStep1')],
             double_tap:  [t('skillDoubleTapStep1'), t('skillDoubleTapStep2')],
+            triple_salvo:[t('skillTripleSalvoStep1'), t('skillTripleSalvoStep2')],
         };
         if (activeId && stepMsgs[activeId]) {
             statusEl.textContent = stepMsgs[activeId][(skillManager.skillStep - 1)] || '';
@@ -1391,7 +1483,10 @@ function handleSkillButtonClick(skillId) {
         const title = t(nameKey);
         const msg = `<p>${t(descKey)}</p><p style="margin-top: 10px;"><strong>${t('useSkillQuery')}</strong></p>`;
         showConfirm(title, msg, () => {
-            skillManager.toggleSkill(skillId, gameMode === 'online', wsSend);
+            const result = skillManager.toggleSkill(skillId, gameMode === 'online', wsSend);
+            if (result.applied) {
+                handleSkillApplied(result.skillId, result.endsTurn);
+            }
             addLog(t('usedLabel').replace('{player}', getPlayerLabel(currentPlayer)).replace('{skill}', t(nameKey)), 'system');
             updateSkillUI();
             drawBoard();

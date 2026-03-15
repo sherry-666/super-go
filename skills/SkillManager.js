@@ -14,10 +14,13 @@ class SkillManager {
         this.registerSkill(new NoSlackingSkill());
         this.registerSkill(new OopsSkill());
         this.registerSkill(new DoubleTapSkill());
+        this.registerSkill(new BlindfoldSkill());
+        this.registerSkill(new TripleSalvoSkill());
 
         this.activeEffects = {
             noSlacking: null,
-            oops: null
+            oops: null,
+            blindfolds: []
         };
 
         // Player hands: skills owned, ready to use
@@ -75,6 +78,7 @@ class SkillManager {
     toggleSkill(skillId, isOnlineGame, wsSendCallback) {
         if (this.activeSkill && this.activeSkill.id === skillId) {
             this.cancelActiveSkill();
+            return { applied: false };
         } else {
             const skill = this.skills[skillId];
             const p = currentPlayer;
@@ -88,15 +92,14 @@ class SkillManager {
                 
                 // Feedback for local player
                 if (typeof playSkillSound === 'function') playSkillSound('impact');
-                if (typeof showSkillPopup === 'function' && !skill.isSecret) {
-                    showSkillPopup(t(skill.nameKey) + ' Activated!');
-                }
                 
                 this.cancelActiveSkill();
+                return { applied: true, skillId, endsTurn: skill.endsTurn };
             } else {
                 this.activeSkill = skill;
                 this.skillStep = 1;
                 this.skillSelectedCell = null;
+                return { applied: false };
             }
         }
     }
@@ -138,19 +141,15 @@ class SkillManager {
                 
                 // Feedback for local player
                 if (typeof playSkillSound === 'function') playSkillSound('impact');
-                if (typeof showSkillPopup === 'function' && !skill.isSecret) {
-                    showSkillPopup(t(skill.nameKey) + ' Activated!');
-                }
-                
-                return true;
+                return { applied: true, skillId, endsTurn: skill.endsTurn };
             }
         }
-        return false;
+        return { applied: false };
     }
 
     applyRemoteSkill(skillId, payload) {
         const skill = this.skills[skillId];
-        if (!skill) return;
+        if (!skill) return { applied: false };
 
         const p = currentPlayer;
         if (skill.getTotalSteps() === 0) {
@@ -171,6 +170,7 @@ class SkillManager {
                 showSkillPopup(`${label}: ${t(skill.nameKey)}!`);
             }
         }
+        return { applied: true, skillId, endsTurn: skill.endsTurn };
     }
 
     clearEffects(playerId) {
@@ -180,6 +180,25 @@ class SkillManager {
         if (this.activeEffects.oops === playerId) {
             this.activeEffects.oops = null;
         }
+        // Blindfolds expire at the end of the opponent's turn (after they've suffered it)
+        // Or at the end of the caster's next turn? 
+        // "2 turns" usually means 2 of the opponent's response opportunities.
+        // Let's decrement them when the TURN changes.
+    }
+
+    decrementEffects(finishedPlayerId) {
+        if (!this.activeEffects.blindfolds) return;
+        
+        // If the player who just finished their turn is NOT the owner, 
+        // it means they just played through one "fog turn".
+        this.activeEffects.blindfolds.forEach(fog => {
+            if (fog.owner !== finishedPlayerId) {
+                fog.duration--;
+            }
+        });
+
+        // Cleanup expired fogs
+        this.activeEffects.blindfolds = this.activeEffects.blindfolds.filter(fog => fog.duration > 0);
     }
 
     isValidTargetHover(x, y) {

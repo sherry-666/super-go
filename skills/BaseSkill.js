@@ -5,6 +5,7 @@ class BaseSkill {
         this.descKey = descKey;
         this.tier = tier;
         this.isSecret = false; // Default: announcement-based skills
+        this.endsTurn = false; // Default: skills are "free actions"
     }
 
     /**
