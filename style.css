@@ -250,6 +250,7 @@ body::before {
 }
 
 .test-mode-control {
+    display: none; /* Hidden by default, shown via /test URL */
     margin-top: 2rem;
     background: rgba(255, 255, 255, 0.05);
     padding: 1rem 1.5rem;

@@ -12,6 +12,11 @@ const PORT = process.env.PORT || 3000;
 // Serve static files
 app.use(express.static(path.join(__dirname)));
 
+// Specific route for test mode
+app.get('/test', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // In-memory rooms: Map<code, { host: ws, guest: ws, board: null }>
 const rooms = new Map();
 

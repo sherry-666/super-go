@@ -145,6 +145,14 @@ function showLobbySection(id) {
     document.getElementById(id).classList.remove('hidden');
 }
 
+// Check for Test Mode URL access
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.pathname.startsWith('/test')) {
+        const testControl = document.querySelector('.test-mode-control');
+        if (testControl) testControl.style.display = 'flex';
+    }
+});
+
 document.getElementById('btn-play-local').addEventListener('click', () => {
     gameMode = 'local';
     myColor = null;
