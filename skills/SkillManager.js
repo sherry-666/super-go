@@ -159,11 +159,16 @@ class SkillManager {
 
                 const skillId = skill.id;
                 const p = currentPlayer;
-                skill.applyEffect(this.skillStep, x, y, this.skillSelectedCell, this);
-                this.skillUsedThisTurn[p] = true;
-                this.removeSkillFromHand(p, skillId);
-
-                if (this.activeSkill) this.cancelActiveSkill();
+                
+                try {
+                    skill.applyEffect(this.skillStep, x, y, this.skillSelectedCell, this);
+                } catch(err) {
+                    console.error(`[SkillManager] Error in ${skillId}.applyEffect:`, err);
+                } finally {
+                    this.skillUsedThisTurn[p] = true;
+                    this.removeSkillFromHand(p, skillId);
+                    if (this.activeSkill) this.cancelActiveSkill();
+                }
 
                 if (isOnlineGame) {
                     if (skill.getTotalSteps() === 1) {

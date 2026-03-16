@@ -1785,9 +1785,9 @@ function updateSkillUI() {
             statusEl.classList.add('hidden');
             
             const box = document.getElementById('instruction-box');
-            if (box && !box.classList.contains('success')) {
+            if (box) {
                 box.textContent = t('instructionPlaceholder');
-                box.classList.remove('highlight');
+                box.classList.remove('highlight', 'success');
             }
         }
     }
