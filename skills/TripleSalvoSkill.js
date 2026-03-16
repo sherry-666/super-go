@@ -56,6 +56,8 @@ class TripleSalvoSkill extends BaseSkill {
             { x: targetX, y: targetY }
         ];
 
+        const allCaptured = [];
+
         const placeAndCapture = (px, py) => {
             board[px][py] = p;
             const opponentColor = p === BLACK ? WHITE : BLACK;
@@ -66,6 +68,7 @@ class TripleSalvoSkill extends BaseSkill {
                         const group = getGroup(nx, ny, board);
                         if (group.liberties.length === 0) {
                             group.stones.forEach(([cx, cy]) => {
+                                allCaptured.push({ x: cx, y: cy });
                                 board[cx][cy] = EMPTY;
                                 captures[p]++;
                             });
@@ -82,6 +85,15 @@ class TripleSalvoSkill extends BaseSkill {
                 playStoneSound();
                 
                 if (index === stones.length - 1) {
+                    if (manager && typeof manager.addTransientHighlight === 'function') {
+                        allCaptured.forEach(({ x, y }) => {
+                            manager.addTransientHighlight(x, y, {
+                                borderColor: 'rgba(0, 100, 255, 0.9)',
+                                glowColor: 'rgba(0, 100, 255, 0.6)',
+                                isDotted: true
+                            });
+                        });
+                    }
                     const label = p === BLACK ? 'Black' : 'White';
                     const c1 = String.fromCharCode(65 + stones[0].x);
                     const r1 = BOARD_SIZE - stones[0].y;

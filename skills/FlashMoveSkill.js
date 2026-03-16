@@ -41,12 +41,12 @@ class FlashMoveSkill extends BaseSkill {
         }
 
         // Highlight the stone's new location for clear feedback
-        if (typeof drawSkillHighlight === 'function') {
+        if (manager && typeof manager.addTransientHighlight === 'function') {
             const highlightConfig = {
                 borderColor: 'rgba(100, 180, 255, 0.9)',
                 glowColor: 'rgba(100, 180, 255, 0.6)'
             };
-            drawSkillHighlight(x2, y2, highlightConfig);
+            manager.addTransientHighlight(x2, y2, highlightConfig);
         }
     }
 

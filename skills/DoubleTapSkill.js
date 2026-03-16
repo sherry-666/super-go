@@ -40,6 +40,7 @@ class DoubleTapSkill extends BaseSkill {
 
     applyEffect(step, targetX, targetY, selectedCell, manager) {
         const p = currentPlayer;
+        const allCaptured = [];
 
         const placeAndCapture = (px, py) => {
             board[px][py] = p;
@@ -51,6 +52,7 @@ class DoubleTapSkill extends BaseSkill {
                         const group = getGroup(nx, ny, board);
                         if (group.liberties.length === 0) {
                             group.stones.forEach(([cx, cy]) => {
+                                allCaptured.push({ x: cx, y: cy });
                                 board[cx][cy] = EMPTY;
                                 captures[p]++;
                             });
@@ -71,6 +73,16 @@ class DoubleTapSkill extends BaseSkill {
             placeAndCapture(targetX, targetY);
             playStoneSound();
             
+            if (manager && typeof manager.addTransientHighlight === 'function') {
+                allCaptured.forEach(({ x, y }) => {
+                    manager.addTransientHighlight(x, y, {
+                        borderColor: 'rgba(0, 100, 255, 0.9)',
+                        glowColor: 'rgba(0, 100, 255, 0.6)',
+                        isDotted: true
+                    });
+                });
+            }
+
             const label = p === BLACK ? 'Black' : 'White';
             const c1 = String.fromCharCode(65 + selectedCell.x);
             const r1 = BOARD_SIZE - selectedCell.y;

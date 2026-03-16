@@ -31,6 +31,16 @@ class YoinkSkill extends BaseSkill {
         if (typeof drawBoard === 'function') {
             drawBoard();
         }
+
+        // Highlight the retracted stone's original location for feedback (especially for opponent)
+        if (manager && typeof manager.addTransientHighlight === 'function') {
+            const highlightConfig = {
+                borderColor: 'rgba(0, 100, 255, 0.9)',
+                glowColor: 'rgba(0, 100, 255, 0.6)',
+                isDotted: true
+            };
+            manager.addTransientHighlight(targetX, targetY, highlightConfig);
+        }
     }
 
     getHighlightStyle(step) {

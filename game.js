@@ -617,6 +617,13 @@ function drawBoard() {
             }
         });
     }
+
+    // Draw persistent transient highlights (e.g. recent skill impacts)
+    if (skillManager.transientHighlights) {
+        skillManager.transientHighlights.forEach(h => {
+            drawSkillHighlight(h.x, h.y, h.style);
+        });
+    }
 }
 
 function drawFog(x, y, gridSize = 2) {
@@ -900,6 +907,11 @@ function drawSkillHighlight(x, y, style) {
     ctx.lineWidth = 3;
     ctx.shadowColor = style.glowColor;
     ctx.shadowBlur = 10;
+    
+    if (style.isDotted) {
+        ctx.setLineDash([5, 5]);
+    }
+    
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
     ctx.stroke();
@@ -1721,6 +1733,16 @@ function updateSkillUI() {
     }
 
     // Skill status bar
+    const box = document.getElementById('instruction-box');
+    if (box) {
+        const isMyTurn = (gameMode !== 'online' || myColor === currentPlayer);
+        if (isMyTurn) {
+            box.classList.remove('hidden');
+        } else {
+            box.classList.add('hidden');
+        }
+    }
+
     if (statusEl) {
         const activeId = skillManager.activeSkill ? skillManager.activeSkill.id : null;
         const stepMsgs = {

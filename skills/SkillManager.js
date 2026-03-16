@@ -34,6 +34,19 @@ class SkillManager {
 
         // Player hands: skills owned, ready to use
         this.playerHands = { 1: [], 2: [] }; // BLACK=1, WHITE=2
+
+        this.transientHighlights = [];
+    }
+
+    addTransientHighlight(x, y, style, durationMs = 2500) {
+        const id = Date.now() + Math.random();
+        this.transientHighlights.push({ id, x, y, style });
+        
+        // Remove after duration
+        setTimeout(() => {
+            this.transientHighlights = this.transientHighlights.filter(h => h.id !== id);
+            if (typeof drawBoard === 'function') drawBoard();
+        }, durationMs);
     }
 
     registerSkill(skill) {

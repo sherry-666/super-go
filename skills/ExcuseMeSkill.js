@@ -53,13 +53,13 @@ class ExcuseMeSkill extends BaseSkill {
         }
         
         // Temporarily highlight the two swapped stones to make it obvious
-        if (typeof drawSkillHighlight === 'function') {
+        if (manager && typeof manager.addTransientHighlight === 'function') {
             const highlightConfig = {
                 borderColor: 'rgba(100, 180, 255, 0.9)',
                 glowColor: 'rgba(100, 180, 255, 0.6)'
             };
-            drawSkillHighlight(x1, y1, highlightConfig);
-            drawSkillHighlight(x2, y2, highlightConfig);
+            manager.addTransientHighlight(x1, y1, highlightConfig);
+            manager.addTransientHighlight(x2, y2, highlightConfig);
         }
     }
 }
