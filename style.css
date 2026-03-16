@@ -739,9 +739,17 @@ canvas {
 }
 
 .skill-btn.skill-active {
-    background: rgba(220, 175, 109, 0.2);
-    border-color: var(--board-color);
-    box-shadow: 0 0 12px rgba(220, 175, 109, 0.25);
+    background: rgba(220, 175, 109, 0.35);
+    border-color: rgba(220, 175, 109, 0.9);
+    border-width: 2px;
+    box-shadow: 0 0 20px rgba(220, 175, 109, 0.55), 0 0 8px rgba(220, 175, 109, 0.4) inset;
+    transform: translateY(-3px) scale(1.04);
+    animation: skillPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skillPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(220, 175, 109, 0.55), 0 0 8px rgba(220, 175, 109, 0.4) inset; }
+    50%       { box-shadow: 0 0 35px rgba(220, 175, 109, 0.85), 0 0 14px rgba(220, 175, 109, 0.6) inset; }
 }
 
 .skill-icon {
