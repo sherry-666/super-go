@@ -1341,6 +1341,9 @@ canvas.addEventListener('click', (e) => {
     const gridY = Math.round((y - padding) / cellSize);
 
     if (gridX >= 0 && gridX < BOARD_SIZE && gridY >= 0 && gridY < BOARD_SIZE) {
+        // Block all input while a skill animation is running
+        if (skillManager.isApplyingEffect) return;
+
         if (gamePhase === 'playing') {
             if (skillManager.activeSkill && isMyTurn()) {
                 // Skill targeting mode (delegate to manager)

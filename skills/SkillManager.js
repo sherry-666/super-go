@@ -6,6 +6,7 @@ class SkillManager {
         this.skillHistory = [];
         this.skillUsedThisTurn = { 1: false, 2: false }; // BLACK=1, WHITE=2
         this.lastSkillUsed = { 1: null, 2: null };
+        this.isApplyingEffect = false; // Lock clicks during async skill animations
 
         this.registerSkill(new DustStoneSkill());
         this.registerSkill(new DustStoneMediumSkill());
@@ -136,7 +137,12 @@ class SkillManager {
             }
 
             if (targetSkill.getTotalSteps() === 0) {
-                await targetSkill.applyEffect(0, null, null, null, this);
+                this.isApplyingEffect = true;
+                try {
+                    await targetSkill.applyEffect(0, null, null, null, this);
+                } finally {
+                    this.isApplyingEffect = false;
+                }
                 this.skillUsedThisTurn[p] = true;
                 if (skillId !== 'copycat') {
                     this.lastSkillUsed[p] = skillId;
@@ -187,10 +193,12 @@ class SkillManager {
                 
                 try {
                     // Pass the full history to the skill
+                    this.isApplyingEffect = true;
                     await skill.applyEffect(this.skillStep, x, y, finalHistory, this);
                 } catch(err) {
                     console.error(`[SkillManager] Error in ${skillId}.applyEffect:`, err);
                 } finally {
+                    this.isApplyingEffect = false;
                     this.skillUsedThisTurn[p] = true;
                     if (this.activeSkillSourceId !== 'copycat') {
                         this.lastSkillUsed[p] = this.activeSkillSourceId;
