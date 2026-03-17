@@ -22,6 +22,7 @@ const skillMeta = {
     surprise:      { icon: '💣', nameKey: 'skillSurprise',      descKey: 'skillSurpriseDesc',    tier: SkillTier.TIER2 },
     void_stone:    { icon: '👻', nameKey: 'skillVoidStone',     descKey: 'skillVoidStoneDesc',   tier: SkillTier.TIER3 },
     under_construction: { icon: '🚧', nameKey: 'skillUnderConstruction', descKey: 'skillUnderConstructionDesc', tier: SkillTier.TIER2 },
+    illegal_construction: { icon: '🏗️', nameKey: 'skillIllegalConstruction', descKey: 'skillIllegalConstructionDesc', tier: SkillTier.TIER4 },
     excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
     flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
     yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
@@ -617,6 +618,26 @@ function drawBoard() {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🚧', centerX, centerY + 2);
+            ctx.restore();
+        });
+    }
+
+    // Draw illegal construction zones
+    if (skillManager && skillManager.activeEffects.illegalConstructions) {
+        skillManager.activeEffects.illegalConstructions.forEach(site => {
+            const centerX = padding + site.x * cellSize;
+            const centerY = padding + site.y * cellSize;
+            
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+            ctx.fillRect(centerX - cellSize/2, centerY - cellSize/2, cellSize, cellSize);
+            
+            if (site.x === site.anchorX && site.y === site.anchorY) {
+                ctx.font = `${cellSize * 1.2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('⛔', centerX + cellSize/2, centerY + cellSize/2);
+            }
             ctx.restore();
         });
     }
@@ -1792,10 +1813,16 @@ function showSkillPopup(text, isTrigger = false) {
 }
 
 function tryPlaceStone(x, y) {
-    // Block playing on construction sites
     if (!skillManager.activeSkill && skillManager.activeEffects.underConstruction?.some(site => site.x === x && site.y === y)) {
         playDisallowSound();
         showSkillPopup(t('skillUnderConstruction') + '!', true);
+        return;
+    }
+
+    // Block playing on Illegal Construction zones (opponent's zones)
+    if (!skillManager.activeSkill && skillManager.isPointBlockedByIllegalConstruction(x, y, currentPlayer)) {
+        playDisallowSound();
+        showSkillPopup(t('skillIllegalConstruction') + '!', true);
         return;
     }
 
@@ -2038,6 +2065,7 @@ function updateSkillUI() {
             dust_stone_giant: [t('skillActive')],
             dust_stone_annihilation: [t('skillActive')],
             under_construction: [t('skillUnderConstructionStep1')],
+            illegal_construction: [t('skillIllegalConstructionStep1')],
             triple_kill: [
                 t('skillTripleKillStep1'),
                 t('skillTripleKillStep2'),

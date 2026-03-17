@@ -34,6 +34,7 @@ class SkillManager {
         this.registerSkill(new SurpriseSkill());
         this.registerSkill(new VoidStoneSkill());
         this.registerSkill(new UnderConstructionSkill());
+        this.registerSkill(new IllegalConstructionSkill());
 
         this.activeEffects = {
             noSlacking: null,
@@ -43,7 +44,8 @@ class SkillManager {
             squatters: [],
             surpriseStones: [],
             voidStones: [],
-            underConstruction: []
+            underConstruction: [],
+            illegalConstructions: []
         };
 
         // Player hands: skills owned, ready to use
@@ -124,7 +126,8 @@ class SkillManager {
             squatters: [],
             surpriseStones: [],
             voidStones: [],
-            underConstruction: []
+            underConstruction: [],
+            illegalConstructions: []
         };
         this.lastSkillUsed = { 1: null, 2: null };
     }
@@ -316,6 +319,27 @@ class SkillManager {
             });
             this.activeEffects.underConstruction = this.activeEffects.underConstruction.filter(site => site.duration > 0);
         }
+        // Decrement illegal construction Duration
+        if (this.activeEffects.illegalConstructions) {
+            this.activeEffects.illegalConstructions.forEach(site => {
+                if (site.owner !== finishedPlayerId) {
+                    site.duration--;
+                }
+            });
+            this.activeEffects.illegalConstructions = this.activeEffects.illegalConstructions.filter(site => site.duration > 0);
+        }
+    }
+
+    isPointBlockedByIllegalConstruction(x, y, playerColor) {
+        if (!this.activeEffects.illegalConstructions) return false;
+        
+        // EXCEPTION: The Squatter skill can override illegal construction zones.
+        if (this.activeSkill && this.activeSkill.id === 'the_squatter') return false;
+
+        // If an illegal construction zone exists at (x,y) and is NOT owned by playerColor, they are blocked.
+        return this.activeEffects.illegalConstructions.some(zone => 
+            zone.x === x && zone.y === y && zone.owner !== playerColor
+        );
     }
 
     isValidTargetHover(x, y) {

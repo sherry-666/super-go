@@ -24,6 +24,12 @@ class FlashMoveSkill extends BaseSkill {
         } else if (step === 2 && selectionHistory && selectionHistory[0]) {
             const selectedCell = selectionHistory[0];
             if (board[x][y] !== EMPTY) return false;
+            
+            // Blocked by Illegal Construction
+            if (window.skillManager && window.skillManager.isPointBlockedByIllegalConstruction(x, y, currentPlayer)) {
+                return false;
+            }
+
             if (!this.isInFlashRange(selectedCell.x, selectedCell.y, x, y)) return false;
 
             // Simulate the move on a scratch board to check for 禁点 (suicide)
