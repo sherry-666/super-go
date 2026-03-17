@@ -330,8 +330,44 @@ async function handleServerMessage(msg) {
             break;
 
         case 'void_stone_triggered':
-            // Opponent stepped on a void stone — apply the trigger on our side
-            applyMove(data.x, data.y);
+            // Caster receives: apply the trigger result directly (no re-running logic)
+            {
+                const { x: vx, y: vy, owner, counterKillPositions = [], selfDestructed } = data;
+                // Remove from void stone list if still present
+                skillManager.activeEffects.voidStones = skillManager.activeEffects.voidStones.filter(
+                    vs => !(vs.x === vx && vs.y === vy)
+                );
+                // Apply board changes
+                if (!selfDestructed) {
+                    board[vx][vy] = owner;
+                } else {
+                    board[vx][vy] = EMPTY;
+                }
+                counterKillPositions.forEach(({ x: cx, y: cy }) => {
+                    board[cx][cy] = EMPTY;
+                    captures[owner]++;
+                });
+                // Visual feedback
+                showSkillPopup(t('skillVoidStoneTriggered'), true);
+                skillManager.addTransientHighlight(vx, vy, {
+                    borderColor: 'rgba(150, 100, 255, 0.9)',
+                    glowColor: 'rgba(150, 100, 255, 0.6)'
+                });
+                // Switch turn to owner (tripper forfeited)
+                history.push(cloneBoard(board));
+                if (history.length > 2) history.shift();
+                const tripper = currentPlayer;
+                skillManager.clearEffects(tripper);
+                skillManager.decrementEffects(tripper);
+                currentPlayer = owner;
+                consecutivePasses = 0;
+                skillManager.resetTurn(currentPlayer);
+                turnCount++;
+                drawBoard();
+                updateUI();
+                updateSkillUI();
+                checkDrawRound();
+            }
             break;
 
         case 'pass':
@@ -1189,7 +1225,7 @@ function applyMove(x, y) {
             playSkillSound('impact');
 
             // Counter-Kill: capture adjacent enemy groups with no liberties
-            let counterKills = 0;
+            const counterKillPositions = [];
             for (const [nx, ny] of getNeighbors(x, y)) {
                 if (board[nx][ny] === opponentOfOwner) {
                     const group = getGroup(nx, ny, board);
@@ -1197,7 +1233,7 @@ function applyMove(x, y) {
                         group.stones.forEach(([cx, cy]) => {
                             board[cx][cy] = EMPTY;
                             captures[owner]++;
-                            counterKills++;
+                            counterKillPositions.push({ x: cx, y: cy });
                         });
                     }
                 }
@@ -1224,7 +1260,7 @@ function applyMove(x, y) {
             const tripperLabel = getPlayerLabel(tripper);
             const col = String.fromCharCode(65 + x);
             const row = BOARD_SIZE - y;
-            const statusMsg = selfDestructed ? 'self-destructed' : `counter-killed ${counterKills} stone(s)`;
+            const statusMsg = selfDestructed ? 'self-destructed' : `counter-killed ${counterKillPositions.length} stone(s)`;
             addLog(`${tripperLabel} stepped on ${ownerLabel}'s Void Stone at ${col}${row}! ${statusMsg}. Turn forfeited.`, 'system');
 
             // Forfeit the tripper's turn
@@ -1232,8 +1268,6 @@ function applyMove(x, y) {
             if (history.length > 2) history.shift();
             skillManager.clearEffects(tripper);
             skillManager.decrementEffects(tripper);
-            // currentPlayer stays at tripper's opponent (the owner's team)
-            // Actually, forfeit means tripper loses their turn → switch to other player
             currentPlayer = owner;
             consecutivePasses = 0;
             skillManager.resetTurn(currentPlayer);
@@ -1242,7 +1276,8 @@ function applyMove(x, y) {
             updateUI();
             updateSkillUI();
             checkDrawRound();
-            return 'void_intercepted'; // Signal to caller not to send a regular 'move'
+
+            return { type: 'void_intercepted', x, y, owner, counterKillPositions, selfDestructed };
         }
     }
 
@@ -1807,10 +1842,16 @@ function tryPlaceStone(x, y) {
 
     // Valid move — apply it
     const moveResult = applyMove(x, y);
-    if (moveResult === 'void_intercepted') {
-        // Don't update instruction box or send 'move'; send a dedicated message instead
+    if (moveResult?.type === 'void_intercepted') {
+        // Send full result payload to the caster so they can apply it directly
         if (gameMode === 'online') {
-            wsSend('void_stone_triggered', { x, y });
+            wsSend('void_stone_triggered', {
+                x: moveResult.x,
+                y: moveResult.y,
+                owner: moveResult.owner,
+                counterKillPositions: moveResult.counterKillPositions,
+                selfDestructed: moveResult.selfDestructed
+            });
         }
         return;
     }
