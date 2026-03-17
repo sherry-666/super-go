@@ -1773,6 +1773,12 @@ function showSkillPopup(text, isTrigger = false) {
 }
 
 function tryPlaceStone(x, y) {
+    // Block owner from playing on their own void stone
+    if (skillManager.activeEffects.voidStones?.some(vs => vs.x === x && vs.y === y && vs.owner === currentPlayer)) {
+        playDisallowSound();
+        return;
+    }
+
     if (skillManager.activeEffects.noSlacking === currentPlayer) {
         if (x <= 2 || x >= BOARD_SIZE - 3 || y <= 2 || y >= BOARD_SIZE - 3) {
             playDisallowSound();
