@@ -18,7 +18,8 @@ const skillMeta = {
     dust_stone_annihilation: { icon: '🌀', nameKey: 'skillDustStoneAnnihilation', descKey: 'skillDustStoneAnnihilationDesc', tier: SkillTier.TIER5 },
     triple_kill:   { icon: '🎯', nameKey: 'skillTripleKill',     descKey: 'skillTripleKillDesc',  tier: SkillTier.TIER4 },
     penta_kill:    { icon: '🔥', nameKey: 'skillPentaKill',      descKey: 'skillPentaKillDesc',   tier: SkillTier.TIER5 },
-    copycat:       { icon: '🪞', nameKey: 'skillCopycat',       descKey: 'skillCopycatDesc',     tier: SkillTier.TIER3 },
+    copycat:       { icon: '🫦', nameKey: 'skillCopycat',       descKey: 'skillCopycatDesc',     tier: SkillTier.TIER3 },
+    surprise:      { icon: '💣', nameKey: 'skillSurprise',      descKey: 'skillSurpriseDesc',    tier: SkillTier.TIER2 },
     excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
     flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
     yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
@@ -1142,8 +1143,8 @@ function applyMove(x, y) {
     const nextBoard = cloneBoard(board);
     nextBoard[x][y] = currentPlayer;
     const opponentColor = currentPlayer === BLACK ? WHITE : BLACK;
+    const capturedPositions = [];
     let capturedCount = 0;
-
     for (const [nx, ny] of getNeighbors(x, y)) {
         if (nextBoard[nx][ny] === opponentColor) {
             const group = getGroup(nx, ny, nextBoard);
@@ -1153,8 +1154,47 @@ function applyMove(x, y) {
                     if (!window.isSquatter(cx, cy)) {
                         nextBoard[cx][cy] = EMPTY;
                         capturedCount++;
+                        capturedPositions.push({ x: cx, y: cy });
                     }
                 });
+            }
+        }
+    }
+
+    // Check for surprise stone detonations
+    if (skillManager.activeEffects.surpriseStones?.length > 0 && capturedPositions.length > 0) {
+        for (const { x: cx, y: cy } of capturedPositions) {
+            const surpriseIdx = skillManager.activeEffects.surpriseStones.findIndex(s => s.x === cx && s.y === cy);
+            if (surpriseIdx !== -1) {
+                const surprised = skillManager.activeEffects.surpriseStones.splice(surpriseIdx, 1)[0];
+                // Detonate: remove all stones in 3×3 area around the surprise stone
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const ex = surprised.x + dx;
+                        const ey = surprised.y + dy;
+                        if (ex >= 0 && ex < BOARD_SIZE && ey >= 0 && ey < BOARD_SIZE && nextBoard[ex][ey] !== EMPTY) {
+                            nextBoard[ex][ey] = EMPTY;
+                            captures[surprised.owner]++;
+                        }
+                    }
+                }
+                // Visual explosion feedback
+                const explosionCenter = { x: surprised.x, y: surprised.y };
+                setTimeout(() => {
+                    if (typeof showSkillPopup === 'function') showSkillPopup('💥 Surprise!', true);
+                    for (let dx2 = -1; dx2 <= 1; dx2++) {
+                        for (let dy2 = -1; dy2 <= 1; dy2++) {
+                            const fx = explosionCenter.x + dx2;
+                            const fy = explosionCenter.y + dy2;
+                            if (fx >= 0 && fx < BOARD_SIZE && fy >= 0 && fy < BOARD_SIZE) {
+                                skillManager.addTransientHighlight(fx, fy, {
+                                    borderColor: 'rgba(255, 100, 0, 0.9)',
+                                    glowColor: 'rgba(255, 200, 0, 0.7)',
+                                });
+                            }
+                        }
+                    }
+                }, 50);
             }
         }
     }

@@ -31,13 +31,15 @@ class SkillManager {
         this.registerSkill(new TripleKillSkill());
         this.registerSkill(new PentaKillSkill());
         this.registerSkill(new CopycatSkill());
+        this.registerSkill(new SurpriseSkill());
 
         this.activeEffects = {
             noSlacking: null,
             oops: null,
             blindfolds: [],
             giantStones: [],
-            squatters: []
+            squatters: [],
+            surpriseStones: []
         };
 
         // Player hands: skills owned, ready to use
@@ -115,7 +117,8 @@ class SkillManager {
             oops: null,
             blindfolds: [],
             giantStones: [],
-            squatters: []
+            squatters: [],
+            surpriseStones: []
         };
         this.lastSkillUsed = { 1: null, 2: null };
     }
