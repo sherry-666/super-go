@@ -6,6 +6,7 @@ class BaseSkill {
         this.tier = tier;
         this.isSecret = false; // Default: announcement-based skills
         this.endsTurn = false; // Default: skills are "free actions"
+        this.isCopyable = true; // Default: skills can be copied by Copycat
     }
 
     /**

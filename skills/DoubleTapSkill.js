@@ -28,6 +28,10 @@ class DoubleTapSkill extends BaseSkill {
     isValidTarget(x, y, step, selectionHistory) {
         if (board[x][y] !== EMPTY) return false;
 
+        // Blocked by Construction
+        const manager = window.skillManager;
+        if (manager && manager.isAreaBlocked(x, y, currentPlayer)) return false;
+
         if (step === 2) {
             const selectedCell = selectionHistory[0];
             // Second stone must be strictly adjacent to the first
@@ -87,6 +91,24 @@ class DoubleTapSkill extends BaseSkill {
                 });
             });
         }
+
+        // Final cleanup for self-captured stones (suicide)
+        const opponentColor = p === BLACK ? WHITE : BLACK;
+        const allStones = [selectedCell, { x: targetX, y: targetY }];
+        allStones.forEach(pos => {
+            if (board[pos.x][pos.y] === p) {
+                const group = getGroup(pos.x, pos.y, board);
+                if (group.liberties.length === 0) {
+                    group.stones.forEach(([cx, cy]) => {
+                        board[cx][cy] = EMPTY;
+                        if (typeof captures !== 'undefined') captures[opponentColor]++;
+                    });
+                }
+            }
+        });
+
+        if (typeof drawBoard === 'function') drawBoard();
+        if (typeof updateUI === 'function') updateUI();
 
         const label = p === BLACK ? 'Black' : 'White';
         const c1 = String.fromCharCode(65 + selectedCell.x);

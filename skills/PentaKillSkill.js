@@ -13,6 +13,11 @@ class PentaKillSkill extends BaseSkill {
         // Must also not be a spot already selected in this same skill activation
         if (board[x][y] !== EMPTY) return false;
         if (selectionHistory && selectionHistory.some(pos => pos.x === x && pos.y === y)) return false;
+
+        // Blocked by Construction
+        const manager = window.skillManager;
+        if (manager && manager.isAreaBlocked(x, y, currentPlayer)) return false;
+
         return true;
     }
 
@@ -51,6 +56,24 @@ class PentaKillSkill extends BaseSkill {
                 await new Promise(r => setTimeout(r, 200));
             }
         }
+
+        // Final cleanup for self-captured stones (suicide)
+        const opponentColor = p === BLACK ? WHITE : BLACK;
+        for (let i = 0; i < selectionHistory.length; i++) {
+            const pos = selectionHistory[i];
+            if (board[pos.x][pos.y] === p) {
+                const group = getGroup(pos.x, pos.y, board);
+                if (group.liberties.length === 0) {
+                    group.stones.forEach(([cx, cy]) => {
+                        board[cx][cy] = EMPTY;
+                        if (typeof captures !== 'undefined') captures[opponentColor]++;
+                    });
+                }
+            }
+        }
+
+        if (typeof drawBoard === 'function') drawBoard();
+        if (typeof updateUI === 'function') updateUI();
 
         const label = p === BLACK ? 'Black' : 'White';
         if (typeof addLog === 'function') {

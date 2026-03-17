@@ -29,6 +29,10 @@ class TripleSalvoSkill extends BaseSkill {
     isValidTarget(x, y, step, selectionHistory) {
         if (board[x][y] !== EMPTY) return false;
 
+        // Blocked by Construction
+        const manager = window.skillManager;
+        if (manager && manager.isAreaBlocked(x, y, currentPlayer)) return false;
+
         if (step === 2) {
             const selectedCell = selectionHistory[0];
             const dx = Math.abs(x - selectedCell.x);
@@ -41,6 +45,9 @@ class TripleSalvoSkill extends BaseSkill {
             const midX = (x + selectedCell.x) / 2;
             const midY = (y + selectedCell.y) / 2;
             if (board[midX][midY] !== EMPTY) return false;
+            
+            // Mid cell must also not be blocked by construction
+            if (manager && manager.isAreaBlocked(midX, midY, currentPlayer)) return false;
         }
 
         return true;
@@ -117,6 +124,23 @@ class TripleSalvoSkill extends BaseSkill {
                 if (typeof updateUI === 'function') updateUI();
             }
         }
+
+        // Final cleanup for self-captured stones (suicide)
+        const opponentColor = p === BLACK ? WHITE : BLACK;
+        stones.forEach(pos => {
+            if (board[pos.x][pos.y] === p) {
+                const group = getGroup(pos.x, pos.y, board);
+                if (group.liberties.length === 0) {
+                    group.stones.forEach(([cx, cy]) => {
+                        board[cx][cy] = EMPTY;
+                        if (typeof captures !== 'undefined') captures[opponentColor]++;
+                    });
+                }
+            }
+        });
+
+        if (typeof drawBoard === 'function') drawBoard();
+        if (typeof updateUI === 'function') updateUI();
     }
 
     getAffectedCells(x, y, step, selectionHistory) {

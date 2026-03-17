@@ -22,7 +22,7 @@ class CopycatSkill extends BaseSkill {
         const lastId = manager.lastSkillUsed[opponent];
         if (lastId && lastId !== 'copycat') {
             const copiedSkill = manager.skills[lastId];
-            if (copiedSkill) {
+            if (copiedSkill && copiedSkill.isCopyable) {
                 return await copiedSkill.applyEffect(step, targetX, targetY, selectionHistory, manager);
             }
         }
@@ -38,7 +38,7 @@ class CopycatSkill extends BaseSkill {
         if (!lastId || lastId === 'copycat') return false;
 
         const copiedSkill = manager.skills[lastId];
-        if (!copiedSkill) return false;
+        if (!copiedSkill || !copiedSkill.isCopyable) return false;
 
         return copiedSkill.hasValidTargets(board, player);
     }

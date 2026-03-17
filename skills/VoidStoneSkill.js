@@ -3,6 +3,7 @@ class VoidStoneSkill extends BaseSkill {
         super('void_stone', 'skillVoidStone', 'skillVoidStoneDesc', SkillTier.TIER3);
         this.isSecret = true;  // Don't broadcast skill usage to the opponent
         this.endsTurn = false; // Player still places their normal stone after
+        this.isCopyable = false;
     }
 
     getTotalSteps() {

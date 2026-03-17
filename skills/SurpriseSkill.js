@@ -3,6 +3,7 @@ class SurpriseSkill extends BaseSkill {
         super('surprise', 'skillSurprise', 'skillSurpriseDesc', SkillTier.TIER2);
         this.isSecret = true;  // Don't announce to the opponent
         this.endsTurn = true;  // Ends the turn after placing
+        this.isCopyable = false;
     }
 
     getTotalSteps() {

@@ -146,6 +146,7 @@ class SkillManager {
                 const lastId = this.lastSkillUsed[opponent];
                 if (!lastId || lastId === 'copycat') return { applied: false };
                 targetSkill = this.skills[lastId];
+                if (!targetSkill || !targetSkill.isCopyable) return { applied: false };
             }
 
             if (targetSkill.getTotalSteps() === 0) {
@@ -340,6 +341,18 @@ class SkillManager {
         return this.activeEffects.illegalConstructions.some(zone => 
             zone.x === x && zone.y === y && zone.owner !== playerColor
         );
+    }
+
+    isAreaBlocked(x, y, playerColor) {
+        // 1. Check global Under Construction (neither player can play)
+        if (this.activeEffects.underConstruction?.some(site => site.x === x && site.y === y)) {
+            return true;
+        }
+        // 2. Check Illegal Construction (unilateral blockade)
+        if (this.isPointBlockedByIllegalConstruction(x, y, playerColor)) {
+            return true;
+        }
+        return false;
     }
 
     isValidTargetHover(x, y) {
