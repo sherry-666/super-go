@@ -18,6 +18,7 @@ const skillMeta = {
     dust_stone_annihilation: { icon: '🌀', nameKey: 'skillDustStoneAnnihilation', descKey: 'skillDustStoneAnnihilationDesc', tier: SkillTier.TIER5 },
     triple_kill:   { icon: '🎯', nameKey: 'skillTripleKill',     descKey: 'skillTripleKillDesc',  tier: SkillTier.TIER4 },
     penta_kill:    { icon: '🔥', nameKey: 'skillPentaKill',      descKey: 'skillPentaKillDesc',   tier: SkillTier.TIER5 },
+    copycat:       { icon: '🪞', nameKey: 'skillCopycat',       descKey: 'skillCopycatDesc',     tier: SkillTier.TIER3 },
     excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
     flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
     yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
@@ -145,6 +146,7 @@ let roomCode = null;
 
 // Skills state
 const skillManager = new SkillManager();
+window.skillManager = skillManager;
 
 // Helper to check if a specific cell contains a 'Squatter'
 window.isSquatter = function(x, y) {

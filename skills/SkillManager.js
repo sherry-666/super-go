@@ -5,6 +5,7 @@ class SkillManager {
         this.skillStep = 0;
         this.skillHistory = [];
         this.skillUsedThisTurn = { 1: false, 2: false }; // BLACK=1, WHITE=2
+        this.lastSkillUsed = { 1: null, 2: null };
 
         this.registerSkill(new DustStoneSkill());
         this.registerSkill(new DustStoneMediumSkill());
@@ -28,6 +29,7 @@ class SkillManager {
         this.registerSkill(new TheSquatterSkill());
         this.registerSkill(new TripleKillSkill());
         this.registerSkill(new PentaKillSkill());
+        this.registerSkill(new CopycatSkill());
 
         this.activeEffects = {
             noSlacking: null,
@@ -95,6 +97,7 @@ class SkillManager {
 
     resetTurn(playerId) {
         this.skillUsedThisTurn[playerId] = false;
+        this.lastSkillUsed[playerId] = null; // Clear so Copycat only sees *this turn's* usage
         this.cancelActiveSkill();
     }
 
@@ -113,6 +116,7 @@ class SkillManager {
             giantStones: [],
             squatters: []
         };
+        this.lastSkillUsed = { 1: null, 2: null };
     }
     async toggleSkill(skillId, isOnlineGame, wsSendCallback) {
         if (this.activeSkill && this.activeSkill.id === skillId) {
@@ -121,9 +125,22 @@ class SkillManager {
         } else {
             const skill = this.skills[skillId];
             const p = currentPlayer;
-            if (skill.getTotalSteps() === 0) {
-                await skill.applyEffect(0, null, null, null, this);
+            
+            // Special handling for Copycat to redirect to the copied skill
+            let targetSkill = skill;
+            if (skillId === 'copycat') {
+                const opponent = p === 1 ? 2 : 1;
+                const lastId = this.lastSkillUsed[opponent];
+                if (!lastId || lastId === 'copycat') return { applied: false };
+                targetSkill = this.skills[lastId];
+            }
+
+            if (targetSkill.getTotalSteps() === 0) {
+                await targetSkill.applyEffect(0, null, null, null, this);
                 this.skillUsedThisTurn[p] = true;
+                if (skillId !== 'copycat') {
+                    this.lastSkillUsed[p] = skillId;
+                }
                 this.removeSkillFromHand(p, skillId);
                 if (isOnlineGame && wsSendCallback) {
                     wsSendCallback('skill', { skill: skillId });
@@ -133,9 +150,13 @@ class SkillManager {
                 if (typeof playSkillSound === 'function') playSkillSound('impact');
                 
                 this.cancelActiveSkill();
-                return { applied: true, skillId, endsTurn: skill.endsTurn };
+                return { applied: true, skillId, endsTurn: targetSkill.endsTurn };
             } else {
-                this.activeSkill = skill;
+                this.activeSkill = targetSkill;
+                // If the user triggered copycat, we still store that we are technically using copycat in some way? 
+                // No, SkillManager needs to know the original ID for hand removal eventually, but handleTargetClick 
+                // uses this.activeSkill. Let's store the 'source' skill ID.
+                this.activeSkillSourceId = skillId; 
                 this.skillStep = 1;
                 this.skillHistory = [];
                 return { applied: false };
@@ -145,6 +166,7 @@ class SkillManager {
 
     cancelActiveSkill() {
         this.activeSkill = null;
+        this.activeSkillSourceId = null;
         this.skillStep = 0;
         this.skillHistory = [];
     }
@@ -170,7 +192,10 @@ class SkillManager {
                     console.error(`[SkillManager] Error in ${skillId}.applyEffect:`, err);
                 } finally {
                     this.skillUsedThisTurn[p] = true;
-                    this.removeSkillFromHand(p, skillId);
+                    if (this.activeSkillSourceId !== 'copycat') {
+                        this.lastSkillUsed[p] = this.activeSkillSourceId;
+                    }
+                    this.removeSkillFromHand(p, this.activeSkillSourceId);
                     if (this.activeSkill) this.cancelActiveSkill();
                 }
 
@@ -188,10 +213,23 @@ class SkillManager {
     }
 
     async applyRemoteSkill(skillId, payload) {
-        const skill = this.skills[skillId];
+        let skill = this.skills[skillId];
         if (!skill) return { applied: false };
 
         const p = currentPlayer;
+        const opponent = p === 1 ? 2 : 1;
+
+        // Special handling for Copycat redirection
+        if (skillId === 'copycat') {
+            const lastId = this.lastSkillUsed[opponent];
+            if (lastId && lastId !== 'copycat') {
+                skill = this.skills[lastId];
+            } else {
+                console.error("[SkillManager] Remote Copycat failed: no valid skill to copy");
+                return { applied: false };
+            }
+        }
+
         if (skill.getTotalSteps() === 0) {
             await skill.applyEffect(0, null, null, null, this);
         } else if (payload.history) {
@@ -204,6 +242,9 @@ class SkillManager {
             await skill.applyEffect(2, payload.x2, payload.y2, h, this);
         }
         this.skillUsedThisTurn[p] = true;
+        if (skillId !== 'copycat') {
+            this.lastSkillUsed[p] = skillId;
+        }
         this.removeSkillFromHand(p, skillId);
         
         // Opponent using a skill
