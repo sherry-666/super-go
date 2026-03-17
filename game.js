@@ -603,6 +603,24 @@ function drawBoard() {
         });
     }
 
+    // Draw under construction markers
+    if (skillManager && skillManager.activeEffects.underConstruction) {
+        skillManager.activeEffects.underConstruction.forEach(site => {
+            const centerX = padding + site.x * cellSize;
+            const centerY = padding + site.y * cellSize;
+            
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 200, 0, 0.2)';
+            ctx.fillRect(centerX - cellSize/2, centerY - cellSize/2, cellSize, cellSize);
+            
+            ctx.font = `${cellSize * 0.7}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🚧', centerX, centerY + 2);
+            ctx.restore();
+        });
+    }
+
     for (let i = 0; i < BOARD_SIZE; i++) {
         if (!board[i] || !Array.isArray(board[i])) continue; // Defensive
         for (let j = 0; j < BOARD_SIZE; j++) {
