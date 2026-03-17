@@ -32,6 +32,7 @@ class SkillManager {
         this.registerSkill(new PentaKillSkill());
         this.registerSkill(new CopycatSkill());
         this.registerSkill(new SurpriseSkill());
+        this.registerSkill(new VoidStoneSkill());
 
         this.activeEffects = {
             noSlacking: null,
@@ -39,7 +40,8 @@ class SkillManager {
             blindfolds: [],
             giantStones: [],
             squatters: [],
-            surpriseStones: []
+            surpriseStones: [],
+            voidStones: []
         };
 
         // Player hands: skills owned, ready to use
@@ -118,7 +120,8 @@ class SkillManager {
             blindfolds: [],
             giantStones: [],
             squatters: [],
-            surpriseStones: []
+            surpriseStones: [],
+            voidStones: []
         };
         this.lastSkillUsed = { 1: null, 2: null };
     }

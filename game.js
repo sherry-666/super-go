@@ -20,6 +20,7 @@ const skillMeta = {
     penta_kill:    { icon: '🔥', nameKey: 'skillPentaKill',      descKey: 'skillPentaKillDesc',   tier: SkillTier.TIER5 },
     copycat:       { icon: '🫦', nameKey: 'skillCopycat',       descKey: 'skillCopycatDesc',     tier: SkillTier.TIER3 },
     surprise:      { icon: '💣', nameKey: 'skillSurprise',      descKey: 'skillSurpriseDesc',    tier: SkillTier.TIER2 },
+    void_stone:    { icon: '👻', nameKey: 'skillVoidStone',     descKey: 'skillVoidStoneDesc',   tier: SkillTier.TIER3 },
     excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
     flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
     yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
@@ -673,6 +674,32 @@ function drawBoard() {
         });
     }
 
+    // Draw void stone ghosts (only visible to owner in online mode; both see in local mode)
+    if (skillManager.activeEffects.voidStones?.length > 0) {
+        skillManager.activeEffects.voidStones.forEach(vs => {
+            // In online mode, only show to the owner
+            if (gameMode === 'online' && vs.owner !== myColor) return;
+
+            const px = padding + vs.x * cellSize;
+            const py = padding + vs.y * cellSize;
+            const r = cellSize * 0.44;
+            const color = vs.owner === BLACK ? 'rgba(30, 30, 30, 0.35)' : 'rgba(240, 240, 240, 0.35)';
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(px, py, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            // Dashed purple border
+            ctx.setLineDash([3, 3]);
+            ctx.strokeStyle = 'rgba(150, 100, 255, 0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+        });
+    }
+
     // Draw persistent transient highlights (e.g. recent skill impacts)
     if (skillManager.transientHighlights) {
         skillManager.transientHighlights.forEach(h => {
@@ -1140,6 +1167,89 @@ function isValidMove(x, y, playerColor, currentBoard = board) {
 }
 
 function applyMove(x, y) {
+    // --- Void Stone Trigger ---
+    // Check if the move lands on an opponent's void stone
+    if (skillManager.activeEffects.voidStones?.length > 0) {
+        const voidIdx = skillManager.activeEffects.voidStones.findIndex(
+            vs => vs.x === x && vs.y === y && vs.owner !== currentPlayer
+        );
+        if (voidIdx !== -1) {
+            const vs = skillManager.activeEffects.voidStones.splice(voidIdx, 1)[0];
+            const tripper = currentPlayer;
+            const owner = vs.owner;
+            const opponentOfOwner = owner === BLACK ? WHITE : BLACK;
+
+            // Materialize the void stone on the board
+            board[x][y] = owner;
+            playSkillSound('impact');
+
+            // Counter-Kill: capture adjacent enemy groups with no liberties
+            let counterKills = 0;
+            for (const [nx, ny] of getNeighbors(x, y)) {
+                if (board[nx][ny] === opponentOfOwner) {
+                    const group = getGroup(nx, ny, board);
+                    if (group.liberties.length === 0) {
+                        group.stones.forEach(([cx, cy]) => {
+                            board[cx][cy] = EMPTY;
+                            captures[owner]++;
+                            counterKills++;
+                        });
+                    }
+                }
+            }
+
+            // Self-Destruct: if the void stone has no liberties, remove it
+            let selfDestructed = false;
+            const voidGroup = getGroup(x, y, board);
+            if (voidGroup.liberties.length === 0) {
+                voidGroup.stones.forEach(([cx, cy]) => {
+                    board[cx][cy] = EMPTY;
+                });
+                selfDestructed = true;
+            }
+
+            // Visual feedback
+            setTimeout(() => {
+                showSkillPopup('👻 Void Stone!', true);
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const fx = x + dx, fy = y + dy;
+                        if (fx >= 0 && fx < BOARD_SIZE && fy >= 0 && fy < BOARD_SIZE) {
+                            skillManager.addTransientHighlight(fx, fy, {
+                                borderColor: 'rgba(150, 100, 255, 0.9)',
+                                glowColor: 'rgba(150, 100, 255, 0.6)'
+                            });
+                        }
+                    }
+                }
+            }, 50);
+
+            const ownerLabel = getPlayerLabel(owner);
+            const tripperLabel = getPlayerLabel(tripper);
+            const col = String.fromCharCode(65 + x);
+            const row = BOARD_SIZE - y;
+            const statusMsg = selfDestructed ? 'self-destructed' : `counter-killed ${counterKills} stone(s)`;
+            addLog(`${tripperLabel} stepped on ${ownerLabel}'s Void Stone at ${col}${row}! ${statusMsg}. Turn forfeited.`, 'system');
+
+            // Forfeit the tripper's turn
+            history.push(cloneBoard(board));
+            if (history.length > 2) history.shift();
+            skillManager.clearEffects(tripper);
+            skillManager.decrementEffects(tripper);
+            // currentPlayer stays at tripper's opponent (the owner's team)
+            // Actually, forfeit means tripper loses their turn → switch to other player
+            currentPlayer = owner;
+            consecutivePasses = 0;
+            skillManager.resetTurn(currentPlayer);
+            turnCount++;
+            drawBoard();
+            updateUI();
+            updateSkillUI();
+            checkDrawRound();
+            return; // Don't apply the original move
+        }
+    }
+
     const nextBoard = cloneBoard(board);
     nextBoard[x][y] = currentPlayer;
     const opponentColor = currentPlayer === BLACK ? WHITE : BLACK;
