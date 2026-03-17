@@ -94,6 +94,33 @@ class ComingThroughSkill extends BaseSkill {
         let logMsg = `${label} dropped Coming Through! at ${colLetter}${rowNumber}`;
         if (crushed > 0) logMsg += ` (Crushed ${crushed})`;
         
+        // Final cleanup for self-captured stones (suicide)
+        // If the giant stone has no liberties, the whole 2x2 area is removed.
+        let isCaptured = false;
+        for (const s of stones) {
+            if (board[s.x][s.y] === p) {
+                const group = getGroup(s.x, s.y, board);
+                if (group.liberties.length === 0) {
+                    isCaptured = true;
+                    break;
+                }
+            }
+        }
+
+        if (isCaptured) {
+            stones.forEach(s => {
+                if (board[s.x][s.y] === p) {
+                    board[s.x][s.y] = EMPTY;
+                    if (typeof captures !== 'undefined') captures[opponentColor]++;
+                }
+            });
+            // Also remove from giantstones list
+            manager.activeEffects.giantStones = manager.activeEffects.giantStones.filter(gs => gs.x !== targetX || gs.y !== targetY);
+        }
+
+        if (typeof drawBoard === 'function') drawBoard();
+        if (typeof updateUI === 'function') updateUI();
+
         if (typeof addLog === 'function') {
             addLog(logMsg, p === BLACK ? 'black' : 'white');
         }
