@@ -565,6 +565,28 @@ function drawBoard() {
                 if (!skipDrawing[i][j]) {
                     drawStone(i, j, stone);
                 }
+                
+                // New: Show sequence marker for already-selected stones in multi-step skills
+                if (skillManager && skillManager.activeSkill && skillManager.skillHistory) {
+                    const historyIndex = skillManager.skillHistory.findIndex(p => p.x === i && p.y === j);
+                    if (historyIndex !== -1) {
+                        drawSkillHighlight(i, j, { 
+                            borderColor: 'rgba(255, 255, 255, 0.9)', 
+                            glowColor: 'rgba(255, 255, 255, 0.6)',
+                            isDotted: true 
+                        });
+                        ctx.save();
+                        ctx.fillStyle = stone === BLACK ? 'white' : 'black';
+                        ctx.font = 'bold 14px "Outfit", sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const cx = padding + i * cellSize;
+                        const cy = padding + j * cellSize;
+                        ctx.fillText(historyIndex + 1, cx, cy);
+                        ctx.restore();
+                    }
+                }
+
                 if (markedDead && markedDead[i] && markedDead[i][j]) {
                     drawDeadMarker(i, j);
                 }
@@ -576,13 +598,38 @@ function drawBoard() {
             } else if (showingTerritory && territoryMap && territoryMap[i] && territoryMap[i][j] !== null) {
                 drawTerritoryMarker(i, j, territoryMap[i][j]);
             } else if (stone === EMPTY) {
-                // Check if AOE highlight applies even to empty cells
-                const isAffected = affectedCells.some(c => c.x === i && c.y === j);
-                if (isAffected) {
-                    drawSkillHighlight(i, j, highlightStyle);
-                } else if (skillManager && skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
-                    // Highlight valid empty targets with standard green
-                    drawSkillValidTarget(i, j);
+                // New: Show ghost stone and sequence marker for empty slots in selection history
+                let inHistory = false;
+                if (skillManager && skillManager.activeSkill && skillManager.skillHistory) {
+                    const historyIndex = skillManager.skillHistory.findIndex(p => p.x === i && p.y === j);
+                    if (historyIndex !== -1) {
+                        inHistory = true;
+                        ctx.save();
+                        ctx.globalAlpha = 0.6;
+                        drawStone(i, j, currentPlayer);
+                        ctx.restore();
+                        
+                        ctx.save();
+                        ctx.fillStyle = currentPlayer === BLACK ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)';
+                        ctx.font = 'bold 14px "Outfit", sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const cx = padding + i * cellSize;
+                        const cy = padding + j * cellSize;
+                        ctx.fillText(historyIndex + 1, cx, cy);
+                        ctx.restore();
+                    }
+                }
+
+                if (!inHistory) {
+                    // Check if AOE highlight applies even to empty cells
+                    const isAffected = affectedCells.some(c => c.x === i && c.y === j);
+                    if (isAffected) {
+                        drawSkillHighlight(i, j, highlightStyle);
+                    } else if (skillManager && skillManager.activeSkill && skillManager.isValidTargetHover(i, j)) {
+                        // Highlight valid empty targets with standard green
+                        drawSkillValidTarget(i, j);
+                    }
                 }
             }
             
