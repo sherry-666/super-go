@@ -1208,21 +1208,12 @@ function applyMove(x, y) {
                 selfDestructed = true;
             }
 
-            // Visual feedback
-            setTimeout(() => {
-                showSkillPopup('👻 Void Stone!', true);
-                for (let dx = -1; dx <= 1; dx++) {
-                    for (let dy = -1; dy <= 1; dy++) {
-                        const fx = x + dx, fy = y + dy;
-                        if (fx >= 0 && fx < BOARD_SIZE && fy >= 0 && fy < BOARD_SIZE) {
-                            skillManager.addTransientHighlight(fx, fy, {
-                                borderColor: 'rgba(150, 100, 255, 0.9)',
-                                glowColor: 'rgba(150, 100, 255, 0.6)'
-                            });
-                        }
-                    }
-                }
-            }, 50);
+            // Visual feedback — synchronous and single-cell only
+            showSkillPopup(t('skillVoidStoneTriggered'), true);
+            skillManager.addTransientHighlight(x, y, {
+                borderColor: 'rgba(150, 100, 255, 0.9)',
+                glowColor: 'rgba(150, 100, 255, 0.6)'
+            });
 
             const ownerLabel = getPlayerLabel(owner);
             const tripperLabel = getPlayerLabel(tripper);
@@ -1288,23 +1279,20 @@ function applyMove(x, y) {
                         }
                     }
                 }
-                // Visual explosion feedback
-                const explosionCenter = { x: surprised.x, y: surprised.y };
-                setTimeout(() => {
-                    if (typeof showSkillPopup === 'function') showSkillPopup('💥 Surprise!', true);
-                    for (let dx2 = -1; dx2 <= 1; dx2++) {
-                        for (let dy2 = -1; dy2 <= 1; dy2++) {
-                            const fx = explosionCenter.x + dx2;
-                            const fy = explosionCenter.y + dy2;
-                            if (fx >= 0 && fx < BOARD_SIZE && fy >= 0 && fy < BOARD_SIZE) {
-                                skillManager.addTransientHighlight(fx, fy, {
-                                    borderColor: 'rgba(255, 100, 0, 0.9)',
-                                    glowColor: 'rgba(255, 200, 0, 0.7)',
-                                });
-                            }
+                // Visual explosion feedback — synchronous so drawBoard renders them
+                showSkillPopup('💥 Surprise!', true);
+                for (let dx2 = -1; dx2 <= 1; dx2++) {
+                    for (let dy2 = -1; dy2 <= 1; dy2++) {
+                        const fx = surprised.x + dx2;
+                        const fy = surprised.y + dy2;
+                        if (fx >= 0 && fx < BOARD_SIZE && fy >= 0 && fy < BOARD_SIZE) {
+                            skillManager.addTransientHighlight(fx, fy, {
+                                borderColor: 'rgba(255, 100, 0, 0.9)',
+                                glowColor: 'rgba(255, 200, 0, 0.7)',
+                            });
                         }
                     }
-                }, 50);
+                }
             }
         }
     }
