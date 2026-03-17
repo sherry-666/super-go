@@ -1775,7 +1775,7 @@ function showSkillPopup(text, isTrigger = false) {
 
 function tryPlaceStone(x, y) {
     // Block playing on construction sites
-    if (skillManager.activeEffects.underConstruction?.some(site => site.x === x && site.y === y)) {
+    if (!skillManager.activeSkill && skillManager.activeEffects.underConstruction?.some(site => site.x === x && site.y === y)) {
         playDisallowSound();
         showSkillPopup(t('skillUnderConstruction') + '!', true);
         return;
