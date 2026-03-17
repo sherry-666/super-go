@@ -21,6 +21,7 @@ const skillMeta = {
     copycat:       { icon: '🫦', nameKey: 'skillCopycat',       descKey: 'skillCopycatDesc',     tier: SkillTier.TIER3 },
     surprise:      { icon: '💣', nameKey: 'skillSurprise',      descKey: 'skillSurpriseDesc',    tier: SkillTier.TIER2 },
     void_stone:    { icon: '👻', nameKey: 'skillVoidStone',     descKey: 'skillVoidStoneDesc',   tier: SkillTier.TIER3 },
+    under_construction: { icon: '🚧', nameKey: 'skillUnderConstruction', descKey: 'skillUnderConstructionDesc', tier: SkillTier.TIER2 },
     excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
     flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
     yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
@@ -1773,6 +1774,13 @@ function showSkillPopup(text, isTrigger = false) {
 }
 
 function tryPlaceStone(x, y) {
+    // Block playing on construction sites
+    if (skillManager.activeEffects.underConstruction?.some(site => site.x === x && site.y === y)) {
+        playDisallowSound();
+        showSkillPopup(t('skillUnderConstruction') + '!', true);
+        return;
+    }
+
     // Block owner from playing on their own void stone
     if (skillManager.activeEffects.voidStones?.some(vs => vs.x === x && vs.y === y && vs.owner === currentPlayer)) {
         playDisallowSound();

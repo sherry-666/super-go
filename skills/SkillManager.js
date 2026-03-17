@@ -33,6 +33,7 @@ class SkillManager {
         this.registerSkill(new CopycatSkill());
         this.registerSkill(new SurpriseSkill());
         this.registerSkill(new VoidStoneSkill());
+        this.registerSkill(new UnderConstructionSkill());
 
         this.activeEffects = {
             noSlacking: null,
@@ -121,7 +122,8 @@ class SkillManager {
             giantStones: [],
             squatters: [],
             surpriseStones: [],
-            voidStones: []
+            voidStones: [],
+            underConstruction: []
         };
         this.lastSkillUsed = { 1: null, 2: null };
     }
@@ -298,6 +300,16 @@ class SkillManager {
 
         // Cleanup expired fogs
         this.activeEffects.blindfolds = this.activeEffects.blindfolds.filter(fog => fog.duration > 0);
+
+        // Decrement under construction Duration
+        if (this.activeEffects.underConstruction) {
+            this.activeEffects.underConstruction.forEach(site => {
+                if (site.owner !== finishedPlayerId) {
+                    site.duration--;
+                }
+            });
+            this.activeEffects.underConstruction = this.activeEffects.underConstruction.filter(site => site.duration > 0);
+        }
     }
 
     isValidTargetHover(x, y) {
