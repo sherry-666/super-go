@@ -19,7 +19,7 @@ class ComingThroughSkill extends BaseSkill {
                  window.isSquatter(x, y+1) || window.isSquatter(x+1, y+1));
     }
 
-    applyEffect(step, targetX, targetY, selectedCell, manager) {
+    async applyEffect(step, targetX, targetY, selectedCell, manager) {
         const p = currentPlayer;
         
         // The 4 stones representing the giant 2x2 stone
@@ -84,7 +84,8 @@ class ComingThroughSkill extends BaseSkill {
         });
 
         playSkillSound('impact'); // loud crush
-        setTimeout(() => playStoneSound(), 100); 
+        await new Promise(resolve => setTimeout(resolve, 100));
+        playStoneSound(); 
 
         const label = p === BLACK ? 'Black' : 'White';
         const colLetter = String.fromCharCode(65 + targetX);
@@ -93,8 +94,12 @@ class ComingThroughSkill extends BaseSkill {
         let logMsg = `${label} dropped Coming Through! at ${colLetter}${rowNumber}`;
         if (crushed > 0) logMsg += ` (Crushed ${crushed})`;
         
-        // Finalize using the top-left corner as the 'last move' focus
-        finalizeTurn(logMsg, p === BLACK ? 'black' : 'white', targetX, targetY);
+        if (typeof addLog === 'function') {
+            addLog(logMsg, p === BLACK ? 'black' : 'white');
+        }
+        
+        // Update last move which manager uses for UI markers
+        lastMove = { x: targetX, y: targetY };
     }
 
     getAffectedCells(x, y, step, selectedCell) {

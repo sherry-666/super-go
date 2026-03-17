@@ -8,6 +8,9 @@ class SkillManager {
 
         this.registerSkill(new DustStoneSkill());
         this.registerSkill(new DustStoneMediumSkill());
+        this.registerSkill(new DustStoneLargeSkill());
+        this.registerSkill(new DustStoneGiantSkill());
+        this.registerSkill(new DustStoneAnnihilationSkill());
         this.registerSkill(new ExcuseMeSkill());
         this.registerSkill(new FlashMoveSkill());
         this.registerSkill(new YoinkSkill());
@@ -109,7 +112,7 @@ class SkillManager {
             squatters: []
         };
     }
-    toggleSkill(skillId, isOnlineGame, wsSendCallback) {
+    async toggleSkill(skillId, isOnlineGame, wsSendCallback) {
         if (this.activeSkill && this.activeSkill.id === skillId) {
             this.cancelActiveSkill();
             return { applied: false };
@@ -117,7 +120,7 @@ class SkillManager {
             const skill = this.skills[skillId];
             const p = currentPlayer;
             if (skill.getTotalSteps() === 0) {
-                skill.applyEffect(0, null, null, null, this);
+                await skill.applyEffect(0, null, null, null, this);
                 this.skillUsedThisTurn[p] = true;
                 this.removeSkillFromHand(p, skillId);
                 if (isOnlineGame && wsSendCallback) {
@@ -144,7 +147,7 @@ class SkillManager {
         this.skillSelectedCell = null;
     }
 
-    handleTargetClick(x, y, isOnlineGame, wsSendCallback) {
+    async handleTargetClick(x, y, isOnlineGame, wsSendCallback) {
         if (!this.activeSkill) return false;
 
         const skill = this.activeSkill;
@@ -161,7 +164,7 @@ class SkillManager {
                 const p = currentPlayer;
                 
                 try {
-                    skill.applyEffect(this.skillStep, x, y, this.skillSelectedCell, this);
+                    await skill.applyEffect(this.skillStep, x, y, this.skillSelectedCell, this);
                 } catch(err) {
                     console.error(`[SkillManager] Error in ${skillId}.applyEffect:`, err);
                 } finally {
@@ -186,17 +189,17 @@ class SkillManager {
         return { applied: false };
     }
 
-    applyRemoteSkill(skillId, payload) {
+    async applyRemoteSkill(skillId, payload) {
         const skill = this.skills[skillId];
         if (!skill) return { applied: false };
 
         const p = currentPlayer;
         if (skill.getTotalSteps() === 0) {
-            skill.applyEffect(0, null, null, null, this);
+            await skill.applyEffect(0, null, null, null, this);
         } else if (skill.getTotalSteps() === 1) {
-            skill.applyEffect(1, payload.x, payload.y, null, this);
+            await skill.applyEffect(1, payload.x, payload.y, null, this);
         } else {
-            skill.applyEffect(2, payload.x2, payload.y2, { x: payload.x1, y: payload.y1 }, this);
+            await skill.applyEffect(2, payload.x2, payload.y2, { x: payload.x1, y: payload.y1 }, this);
         }
         this.skillUsedThisTurn[p] = true;
         this.removeSkillFromHand(p, skillId);

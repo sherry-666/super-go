@@ -45,7 +45,7 @@ class TripleSalvoSkill extends BaseSkill {
         return true;
     }
 
-    applyEffect(step, targetX, targetY, selectedCell, manager) {
+    async applyEffect(step, targetX, targetY, selectedCell, manager) {
         const p = currentPlayer;
         const midX = (targetX + selectedCell.x) / 2;
         const midY = (targetY + selectedCell.y) / 2;
@@ -79,33 +79,42 @@ class TripleSalvoSkill extends BaseSkill {
         };
 
         // Sequential placement for visual/audio effect
-        stones.forEach((stone, index) => {
-            setTimeout(() => {
-                placeAndCapture(stone.x, stone.y);
-                playStoneSound();
-                
-                if (index === stones.length - 1) {
-                    if (manager && typeof manager.addTransientHighlight === 'function') {
-                        allCaptured.forEach(({ x, y }) => {
-                            manager.addTransientHighlight(x, y, {
-                                borderColor: 'rgba(0, 100, 255, 0.9)',
-                                glowColor: 'rgba(0, 100, 255, 0.6)',
-                                isDotted: true
-                            });
+        for (let i = 0; i < stones.length; i++) {
+            const stone = stones[i];
+            
+            // Wait 200ms for each salvo shot
+            if (i > 0) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            
+            placeAndCapture(stone.x, stone.y);
+            playStoneSound();
+            
+            if (i === stones.length - 1) {
+                if (manager && typeof manager.addTransientHighlight === 'function') {
+                    allCaptured.forEach(({ x, y }) => {
+                        manager.addTransientHighlight(x, y, {
+                            borderColor: 'rgba(0, 100, 255, 0.9)',
+                            glowColor: 'rgba(0, 100, 255, 0.6)',
+                            isDotted: true
                         });
-                    }
-                    const label = p === BLACK ? 'Black' : 'White';
-                    const c1 = String.fromCharCode(65 + stones[0].x);
-                    const r1 = BOARD_SIZE - stones[0].y;
-                    const c3 = String.fromCharCode(65 + stones[2].x);
-                    const r3 = BOARD_SIZE - stones[2].y;
-                    finalizeTurn(`${label} Triple Salvo → ${c1}${r1} to ${c3}${r3}`, p === BLACK ? 'black' : 'white', stones[2].x, stones[2].y);
-                } else {
-                    drawBoard();
-                    updateUI();
+                    });
                 }
-            }, index * 200);
-        });
+                const label = p === BLACK ? 'Black' : 'White';
+                const c1 = String.fromCharCode(65 + stones[0].x);
+                const r1 = BOARD_SIZE - stones[0].y;
+                const c3 = String.fromCharCode(65 + stones[2].x);
+                const r3 = BOARD_SIZE - stones[2].y;
+                
+                // Log purely for history (manager handles the turn end)
+                if (typeof addLog === 'function') {
+                    addLog(`${label} Triple Salvo → ${c1}${r1} to ${c3}${r3}`, p === BLACK ? 'black' : 'white');
+                }
+            } else {
+                if (typeof drawBoard === 'function') drawBoard();
+                if (typeof updateUI === 'function') updateUI();
+            }
+        }
     }
 
     getAffectedCells(x, y, step, selectedCell) {

@@ -19,7 +19,7 @@ class TheSquatterSkill extends BaseSkill {
                  window.isSquatter(x, y+1) || window.isSquatter(x+1, y+1));
     }
 
-    applyEffect(step, targetX, targetY, selectedCell, manager) {
+    async applyEffect(step, targetX, targetY, selectedCell, manager) {
         const p = currentPlayer;
         
         // The 4 stones representing the giant 2x2 squatter stone
@@ -93,7 +93,8 @@ class TheSquatterSkill extends BaseSkill {
         });
 
         playSkillSound('impact'); 
-        setTimeout(() => playStoneSound(), 100); 
+        await new Promise(resolve => setTimeout(resolve, 100));
+        playStoneSound(); 
 
         const label = p === BLACK ? 'Black' : 'White';
         const colLetter = String.fromCharCode(65 + targetX);
@@ -102,7 +103,11 @@ class TheSquatterSkill extends BaseSkill {
         let logMsg = `${label} placed The Squatter at ${colLetter}${rowNumber}`;
         if (crushed > 0) logMsg += ` (Crushed ${crushed})`;
         
-        finalizeTurn(logMsg, p === BLACK ? 'black' : 'white', targetX, targetY);
+        if (typeof addLog === 'function') {
+            addLog(logMsg, p === BLACK ? 'black' : 'white');
+        }
+        
+        lastMove = { x: targetX, y: targetY };
     }
 
     getAffectedCells(x, y, step, selectedCell) {

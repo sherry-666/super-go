@@ -13,6 +13,9 @@ let padding = 28; // Reduced from 40 for more board space
 const skillMeta = {
     dust_stone:    { icon: '🌪️', nameKey: 'skillDustStone', descKey: 'skillDustStoneDesc', tier: SkillTier.TIER1 },
     dust_stone_medium: { icon: '🌪️', nameKey: 'skillDustStoneMedium', descKey: 'skillDustStoneMediumDesc', tier: SkillTier.TIER2 },
+    dust_stone_large:  { icon: '🌪️', nameKey: 'skillDustStoneLarge',  descKey: 'skillDustStoneLargeDesc',  tier: SkillTier.TIER3 },
+    dust_stone_giant:  { icon: '🌪️', nameKey: 'skillDustStoneGiant',  descKey: 'skillDustStoneGiantDesc',  tier: SkillTier.TIER4 },
+    dust_stone_annihilation: { icon: '🌀', nameKey: 'skillDustStoneAnnihilation', descKey: 'skillDustStoneAnnihilationDesc', tier: SkillTier.TIER5 },
     excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
     flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
     yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
@@ -245,9 +248,9 @@ function connectWS(callback) {
 
     ws.onopen = () => callback();
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
         const msg = JSON.parse(event.data);
-        handleServerMessage(msg);
+        await handleServerMessage(msg);
     };
 
     ws.onclose = () => {
@@ -281,7 +284,7 @@ function wsSend(type, data) {
     }
 }
 
-function handleServerMessage(msg) {
+async function handleServerMessage(msg) {
     const { type, data } = msg;
 
     switch (type) {
@@ -337,9 +340,9 @@ function handleServerMessage(msg) {
             break;
 
         case 'skill':
-            const skillResult = skillManager.applyRemoteSkill(data.skill, data);
+            const skillResult = await skillManager.applyRemoteSkill(data.skill, data);
             if (skillResult.applied) {
-                handleSkillApplied(skillResult.skillId, skillResult.endsTurn);
+                await handleSkillApplied(skillResult.skillId, skillResult.endsTurn);
             }
             break;
 
@@ -1173,7 +1176,7 @@ function finalizeTurn(logMessage, logType, lastX = null, lastY = null) {
 /**
  * Handle success logic after a skill is applied
  */
-function handleSkillApplied(skillId, endsTurn, x = null, y = null) {
+async function handleSkillApplied(skillId, endsTurn, x = null, y = null) {
     playSkillSound('shimmer');
     
     const box = document.getElementById('instruction-box');
@@ -1290,13 +1293,19 @@ canvas.addEventListener('click', (e) => {
         if (gamePhase === 'playing') {
             if (skillManager.activeSkill && isMyTurn()) {
                 // Skill targeting mode (delegate to manager)
-                const result = skillManager.handleTargetClick(gridX, gridY, gameMode === 'online', wsSend);
-                if (result.applied) {
-                    handleSkillApplied(result.skillId, result.endsTurn, gridX, gridY);
-                } else {
-                    drawBoard();
-                    updateSkillUI();
-                }
+                (async () => {
+                    const result = await skillManager.handleTargetClick(gridX, gridY, gameMode === 'online', wsSend);
+                    if (result === true) {
+                        // Multi-step skill waiting for next step
+                        drawBoard();
+                        updateSkillUI();
+                    } else if (result.applied) {
+                        await handleSkillApplied(result.skillId, result.endsTurn, gridX, gridY);
+                    } else if (result.applied === false) {
+                        drawBoard();
+                        updateSkillUI();
+                    }
+                })();
             } else if (isMyTurn()) {
                 // Check Blindfold fog overlap
                 const inFog = skillManager.activeEffects.blindfolds.some(fog => {
@@ -1748,6 +1757,9 @@ function updateSkillUI() {
         const stepMsgs = {
             dust_stone:  [t('skillActive')],
             dust_stone_medium: [t('skillActive')],
+            dust_stone_large: [t('skillActive')],
+            dust_stone_giant: [t('skillActive')],
+            dust_stone_annihilation: [t('skillActive')],
             excuse_me:   [t('skillExcuseMeStep1'), t('skillExcuseMeStep2')],
             flash_move:  [t('skillFlashMoveStep1'), t('skillFlashMoveStep2')],
             yoink:       [t('skillYoinkStep1')],
@@ -1805,10 +1817,10 @@ function handleSkillButtonClick(skillId) {
         const descKey = skill ? skill.descKey : '';
         const title = t(nameKey);
         const msg = `<p>${t(descKey)}</p><p style="margin-top: 10px;"><strong>${t('useSkillQuery')}</strong></p>`;
-        showConfirm(title, msg, () => {
-            const result = skillManager.toggleSkill(skillId, gameMode === 'online', wsSend);
+        showConfirm(title, msg, async () => {
+            const result = await skillManager.toggleSkill(skillId, gameMode === 'online', wsSend);
             if (result.applied) {
-                handleSkillApplied(result.skillId, result.endsTurn);
+                await handleSkillApplied(result.skillId, result.endsTurn);
             }
             addLog(t('usedLabel').replace('{player}', getPlayerLabel(currentPlayer)).replace('{skill}', t(nameKey)), 'system');
             updateSkillUI();
@@ -1817,14 +1829,19 @@ function handleSkillButtonClick(skillId) {
         return;
     }
 
-    skillManager.toggleSkill(skillId, gameMode === 'online', wsSend);
-    // log activation for targeting skills
-    if (skillManager.activeSkill) {
-        const skill = skillManager.getSkillById(skillId);
-        if (skill) addLog(t('activatedLabel').replace('{player}', getPlayerLabel(currentPlayer)).replace('{skill}', t(skill.nameKey)), 'system');
-    }
-    updateSkillUI();
-    drawBoard();
+    (async () => {
+        const result = await skillManager.toggleSkill(skillId, gameMode === 'online', wsSend);
+        if (result.applied) {
+            await handleSkillApplied(result.skillId, result.endsTurn);
+        }
+        // log activation for targeting skills
+        if (skillManager.activeSkill) {
+            const skill = skillManager.getSkillById(skillId);
+            if (skill) addLog(t('activatedLabel').replace('{player}', getPlayerLabel(currentPlayer)).replace('{skill}', t(skill.nameKey)), 'system');
+        }
+        updateSkillUI();
+        drawBoard();
+    })();
 }
 
 // ====================== Draw Round ======================

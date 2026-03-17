@@ -1,0 +1,12 @@
+# Super Go Skill Integration Rules
+
+When adding a NEW skill to the Super Go project, you MUST follow these 6 steps to ensure full integration and prevent missing translations or metadata:
+
+1.  **Class File**: Create a new class in `skills/{SkillName}.js` extending `BaseSkill`. Ensure it exports itself to `window`.
+2.  **SkillManager registration**: Register the skill in the `SkillManager` constructor in `skills/SkillManager.js` using `this.registerSkill(new {SkillName}());`.
+3.  **Loading**: Add a `<script src="skills/{SkillName}.js"></script>` tag to `index.html` BEFORE `SkillManager.js`.
+4.  **Internationalization**: Add the `nameKey` and `descKey` to both `en` and `zh` objects in `i18n.js`.
+5.  **Metadata**: Add an entry to the `skillMeta` object in `game.js` with `icon`, `nameKey`, `descKey`, and `tier`.
+6.  **Instruction Messages**: Add an entry to the `stepMsgs` object inside `updateSkillUI()` in `game.js` to provide user guidance when the skill is active.
+
+FAILURE TO COMPLY WITH ALL 6 STEPS WILL RESULT IN A BROKEN UI FOR THE NEW SKILL.

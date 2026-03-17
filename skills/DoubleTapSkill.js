@@ -38,7 +38,7 @@ class DoubleTapSkill extends BaseSkill {
         return true;
     }
 
-    applyEffect(step, targetX, targetY, selectedCell, manager) {
+    async applyEffect(step, targetX, targetY, selectedCell, manager) {
         const p = currentPlayer;
         const allCaptured = [];
 
@@ -68,28 +68,34 @@ class DoubleTapSkill extends BaseSkill {
         if (typeof drawBoard === 'function') {
             drawBoard();
         }
+        
+        // Wait 300ms gap for better auditory feel
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         // Place the second stone
-        setTimeout(() => {
-            placeAndCapture(targetX, targetY);
-            playStoneSound();
-            
-            if (manager && typeof manager.addTransientHighlight === 'function') {
-                allCaptured.forEach(({ x, y }) => {
-                    manager.addTransientHighlight(x, y, {
-                        borderColor: 'rgba(0, 100, 255, 0.9)',
-                        glowColor: 'rgba(0, 100, 255, 0.6)',
-                        isDotted: true
-                    });
+        placeAndCapture(targetX, targetY);
+        playStoneSound();
+        
+        if (manager && typeof manager.addTransientHighlight === 'function') {
+            allCaptured.forEach(({ x, y }) => {
+                manager.addTransientHighlight(x, y, {
+                    borderColor: 'rgba(0, 100, 255, 0.9)',
+                    glowColor: 'rgba(0, 100, 255, 0.6)',
+                    isDotted: true
                 });
-            }
+            });
+        }
 
-            const label = p === BLACK ? 'Black' : 'White';
-            const c1 = String.fromCharCode(65 + selectedCell.x);
-            const r1 = BOARD_SIZE - selectedCell.y;
-            const c2 = String.fromCharCode(65 + targetX);
-            const r2 = BOARD_SIZE - targetY;
-            finalizeTurn(`${label} Double Tap → ${c1}${r1} + ${c2}${r2}`, p === BLACK ? 'black' : 'white', targetX, targetY);
-        }, 300); // 300ms gap for better auditory feel
+        const label = p === BLACK ? 'Black' : 'White';
+        const c1 = String.fromCharCode(65 + selectedCell.x);
+        const r1 = BOARD_SIZE - selectedCell.y;
+        const c2 = String.fromCharCode(65 + targetX);
+        const r2 = BOARD_SIZE - targetY;
+        
+        // Log purely for history (manager handles the turn end)
+        if (typeof addLog === 'function') {
+            addLog(`${label} Double Tap → ${c1}${r1} + ${c2}${r2}`, p === BLACK ? 'black' : 'white');
+        }
     }
 
     getHighlightStyle(step) {
