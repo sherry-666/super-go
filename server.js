@@ -92,6 +92,7 @@ wss.on('connection', (ws) => {
             }
 
             case 'move':
+            case 'void_stone_triggered':
             case 'pass':
             case 'resign':
             case 'mark_dead':
