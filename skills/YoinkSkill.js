@@ -10,7 +10,7 @@ class YoinkSkill extends BaseSkill {
      * @param {Object} selectedCell
      * @returns {boolean}
      */
-    isValidTarget(x, y, step, selectedCell) {
+    isValidTarget(x, y, step, selectionHistory) {
         if (window.isSquatter(x, y)) return false;
         // Can only retract your own stone
         return board[x][y] === currentPlayer;
@@ -23,7 +23,7 @@ class YoinkSkill extends BaseSkill {
      * @param {Object} selectedCell
      * @param {Object} manager
      */
-    applyEffect(step, targetX, targetY, selectedCell, manager) {
+    applyEffect(step, targetX, targetY, selectionHistory, manager) {
         // "Retract" the stone by making the cell empty.
         board[targetX][targetY] = EMPTY;
         

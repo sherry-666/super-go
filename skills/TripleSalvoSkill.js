@@ -26,10 +26,11 @@ class TripleSalvoSkill extends BaseSkill {
         return false;
     }
 
-    isValidTarget(x, y, step, selectedCell) {
+    isValidTarget(x, y, step, selectionHistory) {
         if (board[x][y] !== EMPTY) return false;
 
         if (step === 2) {
+            const selectedCell = selectionHistory[0];
             const dx = Math.abs(x - selectedCell.x);
             const dy = Math.abs(y - selectedCell.y);
             
@@ -45,8 +46,9 @@ class TripleSalvoSkill extends BaseSkill {
         return true;
     }
 
-    async applyEffect(step, targetX, targetY, selectedCell, manager) {
+    async applyEffect(step, targetX, targetY, selectionHistory, manager) {
         const p = currentPlayer;
+        const selectedCell = selectionHistory[0];
         const midX = (targetX + selectedCell.x) / 2;
         const midY = (targetY + selectedCell.y) / 2;
         
@@ -117,8 +119,9 @@ class TripleSalvoSkill extends BaseSkill {
         }
     }
 
-    getAffectedCells(x, y, step, selectedCell) {
+    getAffectedCells(x, y, step, selectionHistory) {
         if (step === 2) {
+            const selectedCell = selectionHistory[0];
             const midX = (x + selectedCell.x) / 2;
             const midY = (y + selectedCell.y) / 2;
             return [

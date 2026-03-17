@@ -17,11 +17,12 @@ class FlashMoveSkill extends BaseSkill {
         return super.getHighlightStyle(step);
     }
 
-    isValidTarget(x, y, step, selectedCell) {
+    isValidTarget(x, y, step, selectionHistory) {
         if (window.isSquatter(x, y)) return false;
         if (step === 1) {
             return board[x][y] === currentPlayer;
-        } else if (step === 2 && selectedCell) {
+        } else if (step === 2 && selectionHistory && selectionHistory[0]) {
+            const selectedCell = selectionHistory[0];
             if (board[x][y] !== EMPTY) return false;
             if (!this.isInFlashRange(selectedCell.x, selectedCell.y, x, y)) return false;
 
@@ -59,7 +60,8 @@ class FlashMoveSkill extends BaseSkill {
         return false;
     }
 
-    applyEffect(step, targetX, targetY, selectedCell, manager) {
+    async applyEffect(step, targetX, targetY, selectionHistory, manager) {
+        const selectedCell = selectionHistory[0];
         const x1 = selectedCell.x, y1 = selectedCell.y;
         const x2 = targetX, y2 = targetY;
         const p = currentPlayer;

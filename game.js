@@ -16,6 +16,8 @@ const skillMeta = {
     dust_stone_large:  { icon: '🌪️', nameKey: 'skillDustStoneLarge',  descKey: 'skillDustStoneLargeDesc',  tier: SkillTier.TIER3 },
     dust_stone_giant:  { icon: '🌪️', nameKey: 'skillDustStoneGiant',  descKey: 'skillDustStoneGiantDesc',  tier: SkillTier.TIER4 },
     dust_stone_annihilation: { icon: '🌀', nameKey: 'skillDustStoneAnnihilation', descKey: 'skillDustStoneAnnihilationDesc', tier: SkillTier.TIER5 },
+    triple_kill:   { icon: '🎯', nameKey: 'skillTripleKill',     descKey: 'skillTripleKillDesc',  tier: SkillTier.TIER4 },
+    penta_kill:    { icon: '🔥', nameKey: 'skillPentaKill',      descKey: 'skillPentaKillDesc',   tier: SkillTier.TIER5 },
     excuse_me:     { icon: '🤝', nameKey: 'skillExcuseMe',       descKey: 'skillExcuseMeDesc', tier: SkillTier.TIER1 },
     flash_move:    { icon: '⚡', nameKey: 'skillFlashMove',      descKey: 'skillFlashMoveDesc', tier: SkillTier.TIER1 },
     yoink:         { icon: '🤏', nameKey: 'skillYoink',          descKey: 'skillYoinkDesc', tier: SkillTier.TIER1 },
@@ -1760,6 +1762,18 @@ function updateSkillUI() {
             dust_stone_large: [t('skillActive')],
             dust_stone_giant: [t('skillActive')],
             dust_stone_annihilation: [t('skillActive')],
+            triple_kill: [
+                t('skillTripleKillStep1'),
+                t('skillTripleKillStep2'),
+                t('skillTripleKillStep3')
+            ],
+            penta_kill: [
+                t('skillPentaKillStep1'),
+                t('skillPentaKillStep2'),
+                t('skillPentaKillStep3'),
+                t('skillPentaKillStep4'),
+                t('skillPentaKillStep5')
+            ],
             excuse_me:   [t('skillExcuseMeStep1'), t('skillExcuseMeStep2')],
             flash_move:  [t('skillFlashMoveStep1'), t('skillFlashMoveStep2')],
             yoink:       [t('skillYoinkStep1')],

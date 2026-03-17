@@ -3,7 +3,7 @@ class SkillManager {
         this.skills = {};
         this.activeSkill = null;
         this.skillStep = 0;
-        this.skillSelectedCell = null;
+        this.skillHistory = [];
         this.skillUsedThisTurn = { 1: false, 2: false }; // BLACK=1, WHITE=2
 
         this.registerSkill(new DustStoneSkill());
@@ -26,6 +26,8 @@ class SkillManager {
         this.registerSkill(new ComingThroughSkill());
         this.registerSkill(new EternalNightSkill());
         this.registerSkill(new TheSquatterSkill());
+        this.registerSkill(new TripleKillSkill());
+        this.registerSkill(new PentaKillSkill());
 
         this.activeEffects = {
             noSlacking: null,
@@ -135,7 +137,7 @@ class SkillManager {
             } else {
                 this.activeSkill = skill;
                 this.skillStep = 1;
-                this.skillSelectedCell = null;
+                this.skillHistory = [];
                 return { applied: false };
             }
         }
@@ -144,27 +146,26 @@ class SkillManager {
     cancelActiveSkill() {
         this.activeSkill = null;
         this.skillStep = 0;
-        this.skillSelectedCell = null;
+        this.skillHistory = [];
     }
 
     async handleTargetClick(x, y, isOnlineGame, wsSendCallback) {
         if (!this.activeSkill) return false;
 
         const skill = this.activeSkill;
-        if (skill.isValidTarget(x, y, this.skillStep, this.skillSelectedCell)) {
+        if (skill.isValidTarget(x, y, this.skillStep, this.skillHistory)) {
             if (this.skillStep < skill.getTotalSteps()) {
-                this.skillSelectedCell = { x, y };
+                this.skillHistory.push({ x, y });
                 this.skillStep++;
                 return true;
             } else {
-                const x1 = this.skillSelectedCell ? this.skillSelectedCell.x : null;
-                const y1 = this.skillSelectedCell ? this.skillSelectedCell.y : null;
-
                 const skillId = skill.id;
                 const p = currentPlayer;
+                const finalHistory = [...this.skillHistory, { x, y }];
                 
                 try {
-                    await skill.applyEffect(this.skillStep, x, y, this.skillSelectedCell, this);
+                    // Pass the full history to the skill
+                    await skill.applyEffect(this.skillStep, x, y, finalHistory, this);
                 } catch(err) {
                     console.error(`[SkillManager] Error in ${skillId}.applyEffect:`, err);
                 } finally {
@@ -174,11 +175,8 @@ class SkillManager {
                 }
 
                 if (isOnlineGame) {
-                    if (skill.getTotalSteps() === 1) {
-                        wsSendCallback('skill', { skill: skillId, x, y });
-                    } else {
-                        wsSendCallback('skill', { skill: skillId, x1, y1, x2: x, y2: y });
-                    }
+                    // Send full history for multi-step skills
+                    wsSendCallback('skill', { skill: skillId, history: finalHistory });
                 }
                 
                 // Feedback for local player
@@ -196,10 +194,14 @@ class SkillManager {
         const p = currentPlayer;
         if (skill.getTotalSteps() === 0) {
             await skill.applyEffect(0, null, null, null, this);
+        } else if (payload.history) {
+            const last = payload.history[payload.history.length - 1];
+            await skill.applyEffect(skill.getTotalSteps(), last.x, last.y, payload.history, this);
         } else if (skill.getTotalSteps() === 1) {
-            await skill.applyEffect(1, payload.x, payload.y, null, this);
+            await skill.applyEffect(1, payload.x, payload.y, [{ x: payload.x, y: payload.y }], this);
         } else {
-            await skill.applyEffect(2, payload.x2, payload.y2, { x: payload.x1, y: payload.y1 }, this);
+            const h = [{ x: payload.x1, y: payload.y1 }, { x: payload.x2, y: payload.y2 }];
+            await skill.applyEffect(2, payload.x2, payload.y2, h, this);
         }
         this.skillUsedThisTurn[p] = true;
         this.removeSkillFromHand(p, skillId);
@@ -245,12 +247,12 @@ class SkillManager {
 
     isValidTargetHover(x, y) {
         if (!this.activeSkill) return false;
-        return this.activeSkill.isValidTarget(x, y, this.skillStep, this.skillSelectedCell);
+        return this.activeSkill.isValidTarget(x, y, this.skillStep, this.skillHistory);
     }
 
     getAffectedCells(x, y) {
         if (!this.activeSkill) return [];
-        return this.activeSkill.getAffectedCells(x, y, this.skillStep, this.skillSelectedCell);
+        return this.activeSkill.getAffectedCells(x, y, this.skillStep, this.skillHistory);
     }
 
     getHighlightStyle() {

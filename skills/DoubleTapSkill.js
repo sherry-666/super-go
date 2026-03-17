@@ -25,10 +25,11 @@ class DoubleTapSkill extends BaseSkill {
         return false;
     }
 
-    isValidTarget(x, y, step, selectedCell) {
+    isValidTarget(x, y, step, selectionHistory) {
         if (board[x][y] !== EMPTY) return false;
 
         if (step === 2) {
+            const selectedCell = selectionHistory[0];
             // Second stone must be strictly adjacent to the first
             const dx = Math.abs(x - selectedCell.x);
             const dy = Math.abs(y - selectedCell.y);
@@ -38,9 +39,10 @@ class DoubleTapSkill extends BaseSkill {
         return true;
     }
 
-    async applyEffect(step, targetX, targetY, selectedCell, manager) {
+    async applyEffect(step, targetX, targetY, selectionHistory, manager) {
         const p = currentPlayer;
         const allCaptured = [];
+        const selectedCell = selectionHistory[0];
 
         const placeAndCapture = (px, py) => {
             board[px][py] = p;

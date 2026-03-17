@@ -17,7 +17,7 @@ class ExcuseMeSkill extends BaseSkill {
         return super.getHighlightStyle(step);
     }
 
-    isValidTarget(x, y, step, selectedCell) {
+    isValidTarget(x, y, step, selectionHistory) {
         if (window.isSquatter(x, y)) return false;
         const opponentColor = currentPlayer === BLACK ? WHITE : BLACK;
         
@@ -27,7 +27,8 @@ class ExcuseMeSkill extends BaseSkill {
                 const neighbors = getNeighbors(x, y);
                 return neighbors.some(([nx, ny]) => board[nx][ny] === opponentColor);
             }
-        } else if (step === 2 && selectedCell) {
+        } else if (step === 2 && selectionHistory && selectionHistory[0]) {
+            const selectedCell = selectionHistory[0];
             // Select enemy adjacent to the selected own stone
             if (board[x][y] === opponentColor) {
                 const neighbors = getNeighbors(selectedCell.x, selectedCell.y);
@@ -37,7 +38,8 @@ class ExcuseMeSkill extends BaseSkill {
         return false;
     }
 
-    applyEffect(step, targetX, targetY, selectedCell) {
+    applyEffect(step, targetX, targetY, selectionHistory, manager) {
+        const selectedCell = selectionHistory[0];
         // Swap the two stones
         const x1 = selectedCell.x, y1 = selectedCell.y;
         const x2 = targetX, y2 = targetY;

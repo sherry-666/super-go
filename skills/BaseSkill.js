@@ -13,10 +13,10 @@ class BaseSkill {
      * @param {number} x - The clicked column index (0-18)
      * @param {number} y - The clicked row index (0-18)
      * @param {number} step - The current multi-step index (1-based, e.g. 1, 2)
-     * @param {Object|null} selectedCell - The {x, y} coordinates of the first stone selected, if applicable
+     * @param {Array<{x: number, y: number}>} selectionHistory - History of points selected in previous steps
      * @returns {boolean} True if the target is valid for the current step.
      */
-    isValidTarget(x, y, step, selectedCell) {
+    isValidTarget(x, y, step, selectionHistory) {
         return false;
     }
 
@@ -25,9 +25,10 @@ class BaseSkill {
      * @param {number} step - The step the skill reached before completion
      * @param {number} targetX - The x coordinate of the final click
      * @param {number} targetY - The y coordinate of the final click
-     * @param {Object|null} selectedCell - The {x, y} coordinates of the first stone selected, if applicable
+     * @param {Array<{x: number, y: number}>} selectionHistory - The array of all points selected (including the final one)
+     * @param {SkillManager} manager - The skill manager instance
      */
-    applyEffect(step, targetX, targetY, selectedCell) {
+    applyEffect(step, targetX, targetY, selectionHistory, manager) {
         // To be implemented by subclasses
     }
 
@@ -63,7 +64,7 @@ class BaseSkill {
         // Default implementation checks isValidTarget for step 1 across the board
         for (let x = 0; x < board.length; x++) {
             for (let y = 0; y < board[x].length; y++) {
-                if (this.isValidTarget(x, y, 1, null, board, currentPlayer)) {
+                if (this.isValidTarget(x, y, 1, [], board, currentPlayer)) {
                     return true;
                 }
             }
@@ -75,10 +76,10 @@ class BaseSkill {
      * @param {number} x - The column index
      * @param {number} y - The row index
      * @param {number} step - The current multi-step index
-     * @param {Object|null} selectedCell - The first stone selected, if applicable
+     * @param {Array<{x: number, y: number}>} selectionHistory - History of points selected in previous steps
      * @returns {Array<{x: number, y: number}>}
      */
-    getAffectedCells(x, y, step, selectedCell) {
+    getAffectedCells(x, y, step, selectionHistory) {
         return [{ x, y }];
     }
 }
