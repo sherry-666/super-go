@@ -2019,6 +2019,7 @@ function updateSkillUI() {
             dust_stone_large: [t('skillActive')],
             dust_stone_giant: [t('skillActive')],
             dust_stone_annihilation: [t('skillActive')],
+            under_construction: [t('skillUnderConstructionStep1')],
             triple_kill: [
                 t('skillTripleKillStep1'),
                 t('skillTripleKillStep2'),
