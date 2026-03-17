@@ -14,8 +14,9 @@ class UnderConstructionSkill extends BaseSkill {
         if (!checkBoard || !checkBoard[x] || checkBoard[x][y] === undefined) return false;
         
         // Cannot place on an existing construction site
-        if (window.skillManager && window.skillManager.activeEffects.underConstruction) {
-            const hasConstruction = window.skillManager.activeEffects.underConstruction.some(site => site.x === x && site.y === y);
+        const manager = (typeof skillManager !== 'undefined' ? skillManager : window.skillManager);
+        if (manager && manager.activeEffects.underConstruction) {
+            const hasConstruction = manager.activeEffects.underConstruction.some(site => site.x === x && site.y === y);
             if (hasConstruction) return false;
         }
 
@@ -25,14 +26,16 @@ class UnderConstructionSkill extends BaseSkill {
     hasValidTargets(boardState, currentPlayer) {
         const checkBoard = boardState || (typeof board !== 'undefined' ? board : null);
         if (!checkBoard) return false;
+        
+        const manager = (typeof skillManager !== 'undefined' ? skillManager : window.skillManager);
         for (let x = 0; x < checkBoard.length; x++) {
             if (!checkBoard[x]) continue;
             for (let y = 0; y < checkBoard[x].length; y++) {
                 if (checkBoard[x][y] === EMPTY) {
                     // Check if it's already under construction
                     let hasConstruction = false;
-                    if (window.skillManager && window.skillManager.activeEffects.underConstruction) {
-                        hasConstruction = window.skillManager.activeEffects.underConstruction.some(site => site.x === x && site.y === y);
+                    if (manager && manager.activeEffects.underConstruction) {
+                        hasConstruction = manager.activeEffects.underConstruction.some(site => site.x === x && site.y === y);
                     }
                     if (!hasConstruction) return true;
                 }
@@ -49,18 +52,20 @@ class UnderConstructionSkill extends BaseSkill {
     }
 
     async applyEffect(step, targetX, targetY, selectionHistory, manager) {
+        const p = (typeof currentPlayer !== 'undefined' ? currentPlayer : 1);
         manager.activeEffects.underConstruction = manager.activeEffects.underConstruction || [];
         
         manager.activeEffects.underConstruction.push({
             x: targetX,
             y: targetY,
             duration: 3,
-            owner: currentPlayer
+            owner: p
         });
 
-        const playerLabel = getPlayerLabel(currentPlayer);
+        const playerLabel = (typeof getPlayerLabel === 'function' ? getPlayerLabel(p) : (p === 1 ? 'Black' : 'White'));
         const col = String.fromCharCode(65 + targetX);
-        const row = 19 - targetY; // Assuming BOARD_SIZE = 19
+        const row = (typeof BOARD_SIZE !== 'undefined' ? BOARD_SIZE : 19) - targetY;
+        
         if (typeof addLog === 'function') {
             addLog(`${playerLabel} placed a Construction Marker at ${col}${row}!`, 'system');
         }

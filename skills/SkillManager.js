@@ -42,7 +42,8 @@ class SkillManager {
             giantStones: [],
             squatters: [],
             surpriseStones: [],
-            voidStones: []
+            voidStones: [],
+            underConstruction: []
         };
 
         // Player hands: skills owned, ready to use
@@ -246,16 +247,21 @@ class SkillManager {
             }
         }
 
-        if (skill.getTotalSteps() === 0) {
-            await skill.applyEffect(0, null, null, null, this);
-        } else if (payload.history) {
-            const last = payload.history[payload.history.length - 1];
-            await skill.applyEffect(skill.getTotalSteps(), last.x, last.y, payload.history, this);
-        } else if (skill.getTotalSteps() === 1) {
-            await skill.applyEffect(1, payload.x, payload.y, [{ x: payload.x, y: payload.y }], this);
-        } else {
-            const h = [{ x: payload.x1, y: payload.y1 }, { x: payload.x2, y: payload.y2 }];
-            await skill.applyEffect(2, payload.x2, payload.y2, h, this);
+        try {
+            if (skill.getTotalSteps() === 0) {
+                await skill.applyEffect(0, null, null, null, this);
+            } else if (payload.history) {
+                const last = payload.history[payload.history.length - 1];
+                await skill.applyEffect(skill.getTotalSteps(), last.x, last.y, payload.history, this);
+            } else if (skill.getTotalSteps() === 1) {
+                await skill.applyEffect(1, payload.x, payload.y, [{ x: payload.x, y: payload.y }], this);
+            } else {
+                const h = [{ x: payload.x1, y: payload.y1 }, { x: payload.x2, y: payload.y2 }];
+                await skill.applyEffect(2, payload.x2, payload.y2, h, this);
+            }
+        } catch (err) {
+            console.error(`[SkillManager] Error applying remote skill ${skillId}:`, err);
+            return { applied: false };
         }
         this.skillUsedThisTurn[p] = true;
         if (skillId !== 'copycat') {
