@@ -329,6 +329,11 @@ async function handleServerMessage(msg) {
             applyMove(data.x, data.y);
             break;
 
+        case 'void_stone_triggered':
+            // Opponent stepped on a void stone — apply the trigger on our side
+            applyMove(data.x, data.y);
+            break;
+
         case 'pass':
             applyPass();
             break;
@@ -1237,7 +1242,7 @@ function applyMove(x, y) {
             updateUI();
             updateSkillUI();
             checkDrawRound();
-            return; // Don't apply the original move
+            return 'void_intercepted'; // Signal to caller not to send a regular 'move'
         }
     }
 
@@ -1801,7 +1806,14 @@ function tryPlaceStone(x, y) {
     }
 
     // Valid move — apply it
-    applyMove(x, y);
+    const moveResult = applyMove(x, y);
+    if (moveResult === 'void_intercepted') {
+        // Don't update instruction box or send 'move'; send a dedicated message instead
+        if (gameMode === 'online') {
+            wsSend('void_stone_triggered', { x, y });
+        }
+        return;
+    }
 
     const box = document.getElementById('instruction-box');
     if (box) {
