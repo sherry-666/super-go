@@ -610,10 +610,10 @@ function drawBoard() {
             const centerY = padding + site.y * cellSize;
             
             ctx.save();
-            ctx.fillStyle = 'rgba(255, 200, 0, 0.2)';
+            ctx.fillStyle = 'rgba(255, 200, 0, 0.5)';
             ctx.fillRect(centerX - cellSize/2, centerY - cellSize/2, cellSize, cellSize);
             
-            ctx.font = `${cellSize * 0.7}px Arial`;
+            ctx.font = `${cellSize * 0.8}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🚧', centerX, centerY + 2);
