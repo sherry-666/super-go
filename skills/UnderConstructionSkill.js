@@ -10,7 +10,7 @@ class UnderConstructionSkill extends BaseSkill {
     }
 
     isValidTarget(x, y, step, selectionHistory, boardState) {
-        const checkBoard = boardState || window.board;
+        const checkBoard = boardState || (typeof board !== 'undefined' ? board : null);
         if (!checkBoard || !checkBoard[x] || checkBoard[x][y] === undefined) return false;
         
         // Cannot place on an existing construction site
@@ -22,8 +22,8 @@ class UnderConstructionSkill extends BaseSkill {
         return checkBoard[x][y] === EMPTY;
     }
 
-    hasValidTargets(board, currentPlayer) {
-        const checkBoard = board || window.board;
+    hasValidTargets(boardState, currentPlayer) {
+        const checkBoard = boardState || (typeof board !== 'undefined' ? board : null);
         if (!checkBoard) return false;
         for (let x = 0; x < checkBoard.length; x++) {
             if (!checkBoard[x]) continue;
@@ -55,22 +55,22 @@ class UnderConstructionSkill extends BaseSkill {
             x: targetX,
             y: targetY,
             duration: 3,
-            owner: window.currentPlayer
+            owner: currentPlayer
         });
 
-        const playerLabel = window.getPlayerLabel(window.currentPlayer);
+        const playerLabel = getPlayerLabel(currentPlayer);
         const col = String.fromCharCode(65 + targetX);
         const row = 19 - targetY; // Assuming BOARD_SIZE = 19
-        if (typeof window.addLog === 'function') {
-            window.addLog(`${playerLabel} placed a Construction Marker at ${col}${row}!`, 'system');
+        if (typeof addLog === 'function') {
+            addLog(`${playerLabel} placed a Construction Marker at ${col}${row}!`, 'system');
         }
 
-        if (typeof window.playSkillSound === 'function') {
-            window.playSkillSound('impact');
+        if (typeof playSkillSound === 'function') {
+            playSkillSound('impact');
         }
 
-        if (typeof window.drawBoard === 'function') {
-            window.drawBoard();
+        if (typeof drawBoard === 'function') {
+            drawBoard();
         }
     }
 }
