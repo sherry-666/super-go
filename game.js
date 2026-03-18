@@ -466,11 +466,14 @@ function initGame(onlineIsTestMode = null) {
     if (gameMode === 'online' && onlineIsTestMode !== null) {
         finalTestMode = onlineIsTestMode;
     } else {
-        finalTestMode = document.getElementById('test-mode-toggle').checked;
+        const toggle = document.getElementById('test-mode-toggle');
+        finalTestMode = toggle ? toggle.checked : false;
     }
+    window.isTestMode = finalTestMode;
 
-    if (finalTestMode) {
-        testActions.classList.remove('hidden');
+    if (window.isTestMode || window.location.pathname.startsWith('/test')) {
+        console.log("[SuperGo] Test Mode Initialized: Unhiding Add Skill button.");
+        if (testActions) testActions.classList.remove('hidden');
         populateSkillDropdown();
         addLog(t('testMode') + ' ACTIVE.', 'system');
         
@@ -2017,10 +2020,19 @@ function updateSkillUI() {
 
     // Show/hide the whole skill panel
     const panelEl = handEl.closest('.skill-panel');
-    if (panelEl) panelEl.style.display = hand.length === 0 ? 'none' : '';
+    const testActions = document.getElementById('test-mode-actions');
+    const inTestUrl = window.location.pathname.startsWith('/test');
+    
+    if (testActions && (window.isTestMode || inTestUrl)) {
+        testActions.classList.remove('hidden');
+    }
+    
+    if (panelEl) {
+        panelEl.style.display = (hand.length === 0 && !window.isTestMode && !inTestUrl) ? 'none' : 'flex';
+    }
 
     if (hand.length === 0) {
-        if (emptyEl) emptyEl.style.display = '';
+        if (emptyEl) emptyEl.style.display = (window.isTestMode || inTestUrl) ? 'none' : '';
     } else {
         if (emptyEl) emptyEl.style.display = 'none';
 
@@ -2273,7 +2285,8 @@ function showGamblerModal(player, tier) {
         conversionEl.classList.add('hidden');
         msgEl.classList.add('hidden');
         msgEl.className = 'gambler-result-msg hidden';
-        luckBtn.disabled = (tier >= 5); // No upgrade beyond Tier 5
+        luckBtn.style.display = (tier >= 5) ? 'none' : '';
+        luckBtn.disabled = (tier >= 5); // Fallback
 
         const closeAfterDelay = (delay = 1500) => {
             setTimeout(() => {
@@ -2318,14 +2331,39 @@ function showGamblerModal(player, tier) {
             conversionEl.classList.remove('hidden');
             conversionEl.innerHTML = '';
 
-            // Get 2 random skills
-            let options = skillManager.getDrawOptions(player, 2);
-            // If the user has almost all skills (less than 2 left to draw), allow duplicates from the whole pool
-            if (options.length < 2) {
-                const allIds = Object.keys(skillManager.skills).filter(id => !id.startsWith('gambler_'));
-                while (options.length < 2) {
-                    const randomId = allIds[Math.floor(Math.random() * allIds.length)];
-                    options.push(randomId);
+            // Get 2 random skills of the SAME TIER
+            const allIds = Object.keys(skillManager.skills);
+            let availableSameTier = allIds.filter(id => {
+                const meta = skillMeta[id];
+                return meta && meta.tier === tier && !id.startsWith('gambler_');
+            });
+
+            // Filter for unowned if possible
+            const unownedSameTier = availableSameTier.filter(id => !skillManager.playerHasSkill(player, id));
+            
+            let options = [];
+            if (unownedSameTier.length >= 2) {
+                // Shuffle unowned
+                for (let i = unownedSameTier.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [unownedSameTier[i], unownedSameTier[j]] = [unownedSameTier[j], unownedSameTier[i]];
+                }
+                options = unownedSameTier.slice(0, 2);
+            } else if (availableSameTier.length >= 2) {
+                // If not enough unowned, allow duplicates from same tier
+                for (let i = availableSameTier.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [availableSameTier[i], availableSameTier[j]] = [availableSameTier[j], availableSameTier[i]];
+                }
+                options = availableSameTier.slice(0, 2);
+            } else {
+                // Absolute fallback: use standard draw options (any tier)
+                options = skillManager.getDrawOptions(player, 2);
+                if (options.length < 2) {
+                    const fallbackPool = allIds.filter(id => !id.startsWith('gambler_'));
+                    while (options.length < 2) {
+                        options.push(fallbackPool[Math.floor(Math.random() * fallbackPool.length)]);
+                    }
                 }
             }
 

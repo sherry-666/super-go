@@ -82,10 +82,6 @@ class SkillManager {
     }
 
     removeSkillFromHand(player, skillId) {
-        // In Test Mode, skills are never consumed
-        if (document.getElementById('test-mode-toggle') && document.getElementById('test-mode-toggle').checked) {
-            return;
-        }
         const idx = this.playerHands[player].indexOf(skillId);
         if (idx !== -1) this.playerHands[player].splice(idx, 1);
     }
