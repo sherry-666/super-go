@@ -388,7 +388,10 @@ function applyLanguage() {
         }
     });
 
-    document.getElementById('lang-toggle').textContent = t('langToggle');
+    const langToggle = document.getElementById('lang-toggle');
+    if (langToggle) {
+        langToggle.textContent = t('langToggle');
+    }
     
     // Update dynamic UI components
     if (typeof refreshUI === 'function') {
