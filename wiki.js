@@ -11,8 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.currentLang = window.currentLang === 'en' ? 'zh' : 'en';
             langBtn.textContent = window.currentLang === 'en' ? '中文' : 'EN';
             applyLanguage();
-            renderWiki();
-            updateBackLink(); // Keep back link correct after re-render/lang change
+            // renderWiki is now called inside applyLanguage
         });
     }
 });
@@ -90,4 +89,6 @@ function renderWiki() {
         section.appendChild(grid);
         container.appendChild(section);
     });
+
+    updateBackLink();
 }

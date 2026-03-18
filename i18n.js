@@ -1,5 +1,5 @@
 // ====================== Internationalization ======================
-window.currentLang = 'zh';
+window.currentLang = localStorage.getItem('superGoLang') || 'zh';
 
 const translations = {
     en: {
@@ -373,6 +373,7 @@ function t(key) {
 }
 
 function applyLanguage() {
+    localStorage.setItem('superGoLang', window.currentLang);
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[window.currentLang][key]) {
@@ -396,6 +397,9 @@ function applyLanguage() {
     // Update dynamic UI components
     if (typeof refreshUI === 'function') {
         refreshUI();
+    }
+    if (typeof renderWiki === 'function') {
+        renderWiki();
     }
 }
 
