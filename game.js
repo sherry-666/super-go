@@ -739,11 +739,6 @@ function drawBoard() {
         }
     }
 
-    // Draw last move marker (BEFORE fog, so fog can hide it if needed)
-    if (lastMove && gamePhase === 'playing') {
-        drawLastMoveMarker(lastMove.x, lastMove.y);
-    }
-
     // Draw Blindfold Fogs
     if (skillManager.activeEffects.blindfolds) {
         skillManager.activeEffects.blindfolds.forEach(fog => {
@@ -753,6 +748,11 @@ function drawBoard() {
                 drawFog(fog.x, fog.y, fog.size || 2);
             }
         });
+    }
+
+    // Draw last move marker (AFTER fog, so it remains visible)
+    if (lastMove && gamePhase === 'playing') {
+        drawLastMoveMarker(lastMove.x, lastMove.y);
     }
 
     // Draw void stone ghosts (only visible to owner in online mode; both see in local mode)
