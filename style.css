@@ -1150,6 +1150,34 @@ canvas {
     color: white;
 }
 
+/* ===================== Skill Progress Bar ===================== */
+.skill-progress-bar {
+    width: 60px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin: 4px auto;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    z-index: 2;
+}
+
+.skill-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffd700, #ffaa00);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.skill-btn .skill-progress-bar {
+    opacity: 0.8;
+}
+
+.skill-btn:hover .skill-progress-bar {
+    opacity: 1;
+}
+
 /* ===================== Gambler Modal ===================== */
 .gambler-modal-content {
     background: linear-gradient(145deg, #1a1a24, #2a1a1a);

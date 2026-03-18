@@ -2147,10 +2147,23 @@ function updateSkillUI() {
             btn.dataset.skillId = skillId;
             btn.title = t(meta.descKey);
             const tierKey = `tier${meta.tier || 1}`;
+            
+            let progressHtml = '';
+            if (skillId.startsWith('ko_hunter_')) {
+                const captures = skillManager.koCaptures[viewPlayer] || 0;
+                const percent = (captures / 3) * 100;
+                progressHtml = `
+                    <div class="skill-progress-bar">
+                        <div class="skill-progress-fill" style="width: ${percent}%"></div>
+                    </div>
+                `;
+            }
+
             btn.innerHTML = `
                 <span class="skill-tier" data-i18n="${tierKey}">${t(tierKey)}</span>
                 <span class="skill-icon">${meta.icon}</span>
                 <span class="skill-name">${t(meta.nameKey)}</span>
+                ${progressHtml}
                 <span class="skill-desc">${t(meta.descKey)}</span>
             `;
             btn.addEventListener('click', () => handleSkillButtonClick(skillId));
