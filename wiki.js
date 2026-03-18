@@ -1,5 +1,6 @@
 // Skill Wiki Logic
 document.addEventListener('DOMContentLoaded', () => {
+    updateBackLink();
     renderWiki();
     
     // Setup language toggle for wiki
@@ -11,9 +12,22 @@ document.addEventListener('DOMContentLoaded', () => {
             langBtn.textContent = window.currentLang === 'en' ? '中文' : 'EN';
             applyLanguage();
             renderWiki();
+            updateBackLink(); // Keep back link correct after re-render/lang change
         });
     }
 });
+
+function updateBackLink() {
+    const backBtn = document.getElementById('back-btn-wiki');
+    if (!backBtn) return;
+
+    // Check if we came from /test
+    if (document.referrer.includes('/test')) {
+        backBtn.href = '/test';
+    } else {
+        backBtn.href = '/';
+    }
+}
 
 function renderWiki() {
     const container = document.getElementById('wiki-content');

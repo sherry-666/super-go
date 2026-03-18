@@ -12,6 +12,9 @@
         }
 
         body {
+            display: block !important;
+            justify-content: initial !important;
+            align-items: initial !important;
             overflow-y: auto;
             background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);
             min-height: 100vh;
@@ -25,6 +28,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
         }
 
         .wiki-title-group h1 {
@@ -135,6 +140,7 @@
             font-weight: 600;
             transition: all 0.2s;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            white-space: nowrap;
         }
 
         .back-btn:hover {
@@ -153,10 +159,12 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            .wiki-title-group h1 {
+                font-size: 1.8rem;
+            }
             .wiki-header {
-                flex-direction: column;
+                justify-content: center;
                 gap: 1.5rem;
-                text-align: center;
             }
             .skills-grid {
                 grid-template-columns: 1fr;
@@ -166,7 +174,7 @@
 </head>
 <body>
     <header class="wiki-header">
-        <a href="/" class="back-btn">
+        <a href="/" class="back-btn" id="back-btn-wiki">
             <span>←</span> <span data-i18n="back">Back</span>
         </a>
         <div class="wiki-title-group">
