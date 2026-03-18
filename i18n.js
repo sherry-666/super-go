@@ -371,9 +371,17 @@ const translations = {
 function t(key) {
     return translations[window.currentLang][key] || translations['en'][key] || key;
 }
+window.t = t;
+window.translations = translations;
 
 function applyLanguage() {
     localStorage.setItem('superGoLang', window.currentLang);
+    
+    // Call renderWiki first so it populates elements that might have data-i18n
+    if (typeof renderWiki === 'function') {
+        renderWiki();
+    }
+
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[window.currentLang][key]) {
@@ -397,9 +405,6 @@ function applyLanguage() {
     // Update dynamic UI components
     if (typeof refreshUI === 'function') {
         refreshUI();
-    }
-    if (typeof renderWiki === 'function') {
-        renderWiki();
     }
 }
 

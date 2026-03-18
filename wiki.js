@@ -29,6 +29,7 @@ function updateBackLink() {
 }
 
 function renderWiki() {
+    console.log('renderWiki started, currentLang:', window.currentLang);
     const container = document.getElementById('wiki-content');
     if (!container) return;
     
@@ -79,9 +80,9 @@ function renderWiki() {
             card.innerHTML = `
                 <div class="skill-wiki-header">
                     <div class="skill-wiki-icon">${skill.icon}</div>
-                    <div class="skill-wiki-name">${t(skill.nameKey)}</div>
+                    <div class="skill-wiki-name" data-i18n="${skill.nameKey}">${window.t(skill.nameKey)}</div>
                 </div>
-                <div class="skill-wiki-desc">${t(skill.descKey)}</div>
+                <div class="skill-wiki-desc" data-i18n="${skill.descKey}">${window.t(skill.descKey)}</div>
             `;
             grid.appendChild(card);
         });
@@ -92,3 +93,6 @@ function renderWiki() {
 
     updateBackLink();
 }
+
+window.renderWiki = renderWiki;
+window.updateBackLink = updateBackLink;
