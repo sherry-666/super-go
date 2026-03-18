@@ -459,6 +459,7 @@ function initGame(onlineIsTestMode = null) {
     document.querySelector('.controls').style.display = 'flex';
     document.getElementById('btn-return-lobby').classList.remove('hidden');
     skillManager.resetAll();
+    const testActions = document.getElementById('test-mode-actions');
 
     // Check Test Mode (Online uses server truth, Local uses toggle)
     let finalTestMode = false;
@@ -469,18 +470,17 @@ function initGame(onlineIsTestMode = null) {
     }
 
     if (finalTestMode) {
-        const allSkillIds = Object.keys(skillManager.skills);
-        allSkillIds.forEach(id => {
-            skillManager.addSkillToHand(BLACK, id);
-            skillManager.addSkillToHand(WHITE, id);
-        });
-        addLog(t('testMode') + ' ACTIVE: All skills unlocked.', 'system');
+        testActions.classList.remove('hidden');
+        populateSkillDropdown();
+        addLog(t('testMode') + ' ACTIVE.', 'system');
         
         // Indicate in UI
         const codeLabel = document.getElementById('online-code-label');
         if (codeLabel && gameMode === 'online') {
             codeLabel.textContent += ` [${t('testMode')}]`;
         }
+    } else {
+        testActions.classList.add('hidden');
     }
 
     hoveredCell = null;
@@ -2480,5 +2480,45 @@ function showConfirm(titleKey, messageKey, onConfirm) {
     
     modal.classList.remove('hidden');
 }
+
+// ====================== Test Mode Actions ======================
+function populateSkillDropdown() {
+    const select = document.getElementById('select-skill-test');
+    if (!select) return;
+
+    // Clear existing options except placeholder
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    const allSkills = Object.keys(skillManager.skills).sort();
+    allSkills.forEach(id => {
+        const meta = skillMeta[id];
+        const option = document.createElement('option');
+        option.value = id;
+        const icon = meta ? meta.icon + ' ' : '';
+        const tier = meta ? ` (T${meta.tier})` : '';
+        option.textContent = icon + t(skillManager.skills[id].nameKey) + tier;
+        select.appendChild(option);
+    });
+}
+
+document.getElementById('btn-add-skill-test').addEventListener('click', () => {
+    const select = document.getElementById('select-skill-test');
+    select.classList.toggle('hidden');
+});
+
+document.getElementById('select-skill-test').addEventListener('change', (e) => {
+    const skillId = e.target.value;
+    if (!skillId) return;
+
+    skillManager.addSkillToHand(currentPlayer, skillId);
+    addLog(t('drewLabel').replace('{player}', getPlayerLabel(currentPlayer)).replace('{skill}', t(skillManager.skills[skillId].nameKey)), 'system');
+    updateSkillUI();
+    
+    // Hide and reset select
+    e.target.selectedIndex = 0;
+    e.target.classList.add('hidden');
+});
 
 // Don't auto-init; lobby handles it

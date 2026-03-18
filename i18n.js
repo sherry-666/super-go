@@ -173,7 +173,9 @@ const translations = {
         confirmResign: 'Are you sure you want to resign?',
         volume: 'Volume',
         testMode: 'Test Mode',
-        testModeDesc: 'All skills unlocked, no draw rounds',
+        testModeDesc: 'Start with 0 skills, add any skill manually',
+        testModeAddSkill: '➕ Add Skill',
+        testModeSelectSkill: 'Select a skill to add...',
     },
     zh: {
         title: '超技能围棋',
@@ -346,7 +348,9 @@ const translations = {
         confirmResign: '确定要投降吗？',
         volume: '音量',
         testMode: '测试模式',
-        testModeDesc: '解锁所有技能，关闭抽取环节',
+        testModeDesc: '初始0技能，可手动添加任意技能',
+        testModeAddSkill: '➕ 添加技能',
+        testModeSelectSkill: '选择要添加的技能...',
     }
 };
 
