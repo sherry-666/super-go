@@ -207,6 +207,10 @@ body::before {
 }
 
 .lobby-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     width: 100%;
     max-width: 280px;
     padding: 1rem 2rem;
