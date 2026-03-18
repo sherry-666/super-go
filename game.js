@@ -38,6 +38,11 @@ const skillMeta = {
     coming_through:{ icon: '🚷', nameKey: 'skillComingThrough',  descKey: 'skillComingThroughDesc', tier: SkillTier.TIER4 },
     eternal_night: { icon: '🌑', nameKey: 'skillEternalNight',   descKey: 'skillEternalNightDesc', tier: SkillTier.TIER5 },
     the_squatter:  { icon: '🔒', nameKey: 'skillTheSquatter',    descKey: 'skillTheSquatterDesc', tier: SkillTier.TIER5 },
+    gambler_1:     { icon: '🎲', nameKey: 'skillGambler',       descKey: 'skillGamblerDesc', tier: SkillTier.TIER1 },
+    gambler_2:     { icon: '🎲', nameKey: 'skillGambler',       descKey: 'skillGamblerDesc', tier: SkillTier.TIER2 },
+    gambler_3:     { icon: '🎲', nameKey: 'skillGambler',       descKey: 'skillGamblerDesc', tier: SkillTier.TIER3 },
+    gambler_4:     { icon: '🎲', nameKey: 'skillGambler',       descKey: 'skillGamblerDesc', tier: SkillTier.TIER4 },
+    gambler_5:     { icon: '🎲', nameKey: 'skillGambler',       descKey: 'skillGamblerDesc', tier: SkillTier.TIER5 },
 };
 
 const KOMI = 6.5;
@@ -2248,6 +2253,105 @@ function showDrawModal(player, onComplete) {
     });
 
     modal.classList.remove('hidden');
+}
+
+/**
+ * Special modal for the Gambler skill choices.
+ */
+function showGamblerModal(player, tier) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('gambler-modal');
+        const optionsEl = document.getElementById('gambler-options');
+        const conversionEl = document.getElementById('gambler-conversion-pool');
+        const msgEl = document.getElementById('gambler-result-msg');
+        const luckBtn = document.getElementById('btn-gambler-luck');
+        const convertBtn = document.getElementById('btn-gambler-convert');
+
+        // Reset state
+        modal.classList.remove('hidden');
+        optionsEl.classList.remove('hidden');
+        conversionEl.classList.add('hidden');
+        msgEl.classList.add('hidden');
+        msgEl.className = 'gambler-result-msg hidden';
+        luckBtn.disabled = (tier >= 5); // No upgrade beyond Tier 5
+
+        const closeAfterDelay = (delay = 1500) => {
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                updateSkillUI();
+                resolve();
+            }, delay);
+        };
+
+        // --- Try Your Luck ---
+        luckBtn.onclick = () => {
+            const success = Math.random() < 0.5;
+            optionsEl.classList.add('hidden');
+            msgEl.classList.remove('hidden');
+            
+            if (success) {
+                const nextTier = tier + 1;
+                skillManager.addSkillToHand(player, `gambler_${nextTier}`);
+                msgEl.textContent = t('gamblerLuckSuccess').replace('{tier}', t(`tier${nextTier}`));
+                msgEl.classList.add('success');
+                addLog(t('logSkillImpact').replace('{outcome}', msgEl.textContent), 'system');
+                if (gameMode === 'online') wsSend('skill_pick', { player, skillId: `gambler_${nextTier}` });
+            } else {
+                if (tier > 1) {
+                    const prevTier = tier - 1;
+                    skillManager.addSkillToHand(player, `gambler_${prevTier}`);
+                    msgEl.textContent = t('gamblerLuckFail').replace('{tier}', t(`tier${prevTier}`));
+                    msgEl.classList.add('fail');
+                    if (gameMode === 'online') wsSend('skill_pick', { player, skillId: `gambler_${prevTier}` });
+                } else {
+                    msgEl.textContent = t('gamblerLuckPoof');
+                    msgEl.classList.add('fail');
+                }
+                addLog(t('logSkillImpact').replace('{outcome}', msgEl.textContent), 'system');
+            }
+            closeAfterDelay();
+        };
+
+        // --- Convert ---
+        convertBtn.onclick = () => {
+            optionsEl.classList.add('hidden');
+            conversionEl.classList.remove('hidden');
+            conversionEl.innerHTML = '';
+
+            // Get 2 random skills
+            let options = skillManager.getDrawOptions(player, 2);
+            // If the user has almost all skills (less than 2 left to draw), allow duplicates from the whole pool
+            if (options.length < 2) {
+                const allIds = Object.keys(skillManager.skills).filter(id => !id.startsWith('gambler_'));
+                while (options.length < 2) {
+                    const randomId = allIds[Math.floor(Math.random() * allIds.length)];
+                    options.push(randomId);
+                }
+            }
+
+            options.forEach(skillId => {
+                const meta = skillMeta[skillId] || { icon: '✨', nameKey: skillId, descKey: '' };
+                const card = document.createElement('div');
+                card.className = 'draw-card';
+                const tierKey = `tier${meta.tier || 1}`;
+                card.innerHTML = `
+                    <div class="draw-card-icon">${meta.icon}</div>
+                    <div class="draw-card-tier">${t(tierKey)}</div>
+                    <div class="draw-card-name">${t(meta.nameKey)}</div>
+                    <div class="draw-card-desc">${t(meta.descKey)}</div>
+                `;
+                card.onclick = () => {
+                    skillManager.addSkillToHand(player, skillId);
+                    addLog(t('drewLabel').replace('{player}', getPlayerLabel(player)).replace('{skill}', t(meta.nameKey)), 'system');
+                    if (gameMode === 'online') wsSend('skill_pick', { player, skillId });
+                    modal.classList.add('hidden');
+                    updateSkillUI();
+                    resolve();
+                };
+                conversionEl.appendChild(card);
+            });
+        };
+    });
 }
 
 // ====================== Button Event Listeners ======================

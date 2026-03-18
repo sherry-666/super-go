@@ -185,17 +185,31 @@
         </div>
     </div>
 
-    <!-- Skill Draw Modal -->
-    <div id="skill-draw-modal" class="modal-overlay hidden">
-        <div class="draw-modal-content">
-            <div class="draw-modal-header">
-                <div id="draw-round-badge" class="draw-round-badge" data-i18n="skillDrawTitle">✨ Skill Draw Round!</div>
-                <h2 id="draw-modal-player" class="draw-modal-player">Black is drawing...</h2>
-                <p id="draw-modal-subtitle" class="draw-modal-subtitle" data-i18n="skillDrawSubtitle">Pick 1 skill to add to your hand</p>
+    <!-- Gambler Modal -->
+    <div id="gambler-modal" class="modal-overlay hidden">
+        <div class="gambler-modal-content">
+            <h2 id="gambler-modal-title" data-i18n="gamblerModalTitle">The Gambler's Choice</h2>
+            <p id="gambler-modal-subtitle" data-i18n="gamblerModalSubtitle">High risk, high reward. What is your move?</p>
+            
+            <div id="gambler-options" class="gambler-options">
+                <button id="btn-gambler-luck" class="gambler-opt-btn luck">
+                    <div class="opt-icon">🎲</div>
+                    <div class="opt-label" data-i18n="gamblerOptionLuck">Try Your Luck</div>
+                    <div class="opt-desc">50% Upgrade / 50% Downgrade</div>
+                </button>
+                <button id="btn-gambler-convert" class="gambler-opt-btn convert">
+                    <div class="opt-icon">⚖️</div>
+                    <div class="opt-label" data-i18n="gamblerOptionConvert">Convert</div>
+                    <div class="opt-desc">Pick 1 of 2 random skills</div>
+                </button>
             </div>
-            <div id="draw-cards" class="draw-cards">
-                <!-- 3 skill cards injected here -->
+
+            <!-- Conversion picking area (initially hidden) -->
+            <div id="gambler-conversion-pool" class="draw-cards hidden" style="margin-top: 2rem;">
+                <!-- 2 skill cards injected here -->
             </div>
+            
+            <div id="gambler-result-msg" class="gambler-result-msg hidden"></div>
         </div>
     </div>
 
@@ -230,6 +244,7 @@
     <script src="skills/ComingThroughSkill.js"></script>
     <script src="skills/EternalNightSkill.js"></script>
     <script src="skills/TheSquatterSkill.js"></script>
+    <script src="skills/GamblerSkill.js"></script>
     <script src="skills/SkillManager.js"></script>
     <script src="game.js"></script>
 </body>

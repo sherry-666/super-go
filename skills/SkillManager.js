@@ -35,6 +35,11 @@ class SkillManager {
         this.registerSkill(new VoidStoneSkill());
         this.registerSkill(new UnderConstructionSkill());
         this.registerSkill(new IllegalConstructionSkill());
+        this.registerSkill(new GamblerSkill(1));
+        this.registerSkill(new GamblerSkill(2));
+        this.registerSkill(new GamblerSkill(3));
+        this.registerSkill(new GamblerSkill(4));
+        this.registerSkill(new GamblerSkill(5));
 
         this.activeEffects = {
             noSlacking: null,

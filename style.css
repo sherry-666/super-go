@@ -1119,3 +1119,112 @@ canvas {
     align-items: center;
     gap: 0; /* Managed by instruction-box margin */
 }
+
+/* ===================== Gambler Modal ===================== */
+.gambler-modal-content {
+    background: linear-gradient(145deg, #1a1a24, #2a1a1a);
+    padding: 3rem;
+    border-radius: 32px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 180, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    text-align: center;
+    max-width: 650px;
+    width: 90%;
+    position: relative;
+    animation: gamblerModalPop 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.28);
+}
+
+@keyframes gamblerModalPop {
+    from { transform: scale(0.8) translateY(40px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+#gambler-modal-title {
+    font-size: 2.8rem;
+    color: #ffd700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    margin-bottom: 0.5rem;
+}
+
+#gambler-modal-subtitle {
+    opacity: 0.7;
+    margin-bottom: 2.5rem;
+}
+
+.gambler-options {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.gambler-opt-btn {
+    flex: 1;
+    min-width: 240px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2.5rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: white;
+}
+
+.gambler-opt-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-8px);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+}
+
+.gambler-opt-btn.luck:hover {
+    border-color: #ffd700;
+    box-shadow: 0 15px 40px rgba(255, 215, 0, 0.2);
+}
+
+.gambler-opt-btn.convert:hover {
+    border-color: #a050ff;
+    box-shadow: 0 15px 40px rgba(160, 80, 255, 0.2);
+}
+
+.opt-icon {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.opt-label {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.opt-desc {
+    font-size: 0.9rem;
+    opacity: 0.5;
+}
+
+.gambler-result-msg {
+    margin-top: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: fadeIn 0.5s ease;
+}
+
+.gambler-result-msg.success {
+    color: #4cd137;
+    border-color: #4cd13733;
+    background: #4cd13711;
+}
+
+.gambler-result-msg.fail {
+    color: #e84118;
+    border-color: #e8411833;
+    background: #e8411811;
+}
