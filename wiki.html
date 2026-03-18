@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="wikiTitle">Skill Wiki - Super Go</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --wiki-card-bg: rgba(255, 255, 255, 0.05);
+            --wiki-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            overflow-y: auto;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: white;
+        }
+
+        .wiki-header {
+            max-width: 1200px;
+            margin: 0 auto 3rem auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .wiki-title-group h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(to right, #fff, #aaa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .wiki-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .tier-section {
+            margin-bottom: 4rem;
+        }
+
+        .tier-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-color);
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--primary-color);
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .skill-wiki-card {
+            background: var(--wiki-card-bg);
+            border: 1px solid var(--wiki-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .skill-wiki-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .skill-wiki-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary-color);
+            opacity: 0.3;
+        }
+
+        .skill-wiki-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .skill-wiki-icon {
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .skill-wiki-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .skill-wiki-desc {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .back-btn {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .lang-toggle-wiki {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .wiki-header {
+                flex-direction: column;
+                gap: 1.5rem;
+                text-align: center;
+            }
+            .skills-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="wiki-header">
+        <a href="/" class="back-btn">
+            <span>←</span> <span data-i18n="back">Back</span>
+        </a>
+        <div class="wiki-title-group">
+            <h1 data-i18n="wikiTitle">Skill Wiki</h1>
+        </div>
+        <button id="lang-toggle-wiki" class="lang-toggle-wiki">EN</button>
+    </header>
+
+    <main class="wiki-container" id="wiki-content">
+        <!-- Tiers and skills injected here -->
+    </main>
+
+    <script src="i18n.js"></script>
+    <script src="skills/BaseSkill.js"></script>
+    <script src="game.js"></script> <!-- To get skillMeta and SkillTier -->
+    <script src="wiki.js"></script>
+</body>
+</html>

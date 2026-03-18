@@ -182,6 +182,7 @@ const translations = {
         testModeDesc: 'Start with 0 skills, add any skill manually',
         testModeAddSkill: '➕ Add Skill',
         testModeSelectSkill: 'Select a skill to add...',
+        wikiTitle: '📚 Skill Wiki',
     },
     zh: {
         title: '超技能围棋',
@@ -362,7 +363,8 @@ const translations = {
         testMode: '测试模式',
         testModeDesc: '初始0技能，可手动添加任意技能',
         testModeAddSkill: '➕ 添加技能',
-        testModeSelectSkill: '选择要添加的技能...',
+        testModeSelectSkill: '请选择要添加的技能...',
+        wikiTitle: '📚 技能百科',
     }
 };
 

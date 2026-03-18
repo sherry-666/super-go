@@ -25,13 +25,9 @@
             <!-- Main menu -->
             <div id="lobby-menu" class="lobby-section">
                 <button id="btn-play-local" class="btn lobby-btn" data-i18n="playLocal">⚫ Play Local</button>
-                <button id="btn-play-online" class="btn lobby-btn" data-i18n="playOnline">🌐 Play Online</button>
-
-                <div class="test-mode-control">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="test-mode-toggle">
-                        <span class="slider"></span>
-                    </label>
+                <button id="btn-play-online" class="btn" data-i18n="playOnline">🌐 Play Online</button>
+                <a href="/wiki" class="btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;" data-i18n="wikiTitle">📚 Skill Wiki</a>
+                <div class="test-mode-control" style="display: none; align-items: center; gap: 0.5rem; background: rgba(255, 255, 0, 0.1); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(255, 255, 0, 0.2);">
                     <div class="toggle-label-group">
                         <span data-i18n="testMode">Test Mode</span>
                         <small data-i18n="testModeDesc">All skills unlocked, no draw rounds</small>

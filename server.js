@@ -17,6 +17,10 @@ app.get('/test', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/wiki', (req, res) => {
+    res.sendFile(path.join(__dirname, 'wiki.html'));
+});
+
 // In-memory rooms: Map<code, { host: ws, guest: ws, board: null }>
 const rooms = new Map();
 
