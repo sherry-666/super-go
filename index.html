@@ -223,6 +223,20 @@
         </div>
     </div>
 
+    <!-- KO Hunter Modal -->
+    <div id="kohunter-modal" class="modal-overlay hidden">
+        <div class="gambler-modal-content">
+            <h2 id="kohunter-modal-title" data-i18n="skillKOHunter">KO Hunter</h2>
+            <p id="kohunter-modal-subtitle" data-i18n="skillKOHunterDesc">Pick a skill to harvest.</p>
+            
+            <div id="kohunter-pool" class="draw-cards" style="margin-top: 2rem;">
+                <!-- 2 skill cards injected here -->
+            </div>
+            
+            <div id="kohunter-result-msg" class="gambler-result-msg hidden"></div>
+        </div>
+    </div>
+
     <div id="skill-popup" class="skill-popup"></div>
     <script src="goscorer.js"></script>
     <script src="i18n.js"></script>
@@ -244,17 +258,18 @@
     <script src="skills/TripleKillSkill.js"></script>
     <script src="skills/PentaKillSkill.js"></script>
     <script src="skills/CopycatSkill.js"></script>
-    <script src="skills/SurpriseSkill.js"></script>
-    <script src="skills/VoidStoneSkill.js"></script>
     <script src="skills/UnderConstructionSkill.js"></script>
     <script src="skills/IllegalConstructionSkill.js"></script>
+    <script src="skills/GamblerSkill.js"></script>
+    <script src="skills/KOHunterSkill.js"></script>
+    <script src="skills/SurpriseSkill.js"></script>
+    <script src="skills/VoidStoneSkill.js"></script>
     <script src="skills/DibsSkill.js"></script>
     <script src="skills/DeepMistSkill.js"></script>
     <script src="skills/VoidRealmSkill.js"></script>
     <script src="skills/ComingThroughSkill.js"></script>
     <script src="skills/EternalNightSkill.js"></script>
     <script src="skills/TheSquatterSkill.js"></script>
-    <script src="skills/GamblerSkill.js"></script>
     <script src="skills/SkillManager.js"></script>
     <script src="game.js"></script>
 </body>

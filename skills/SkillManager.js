@@ -35,11 +35,11 @@ class SkillManager {
         this.registerSkill(new VoidStoneSkill());
         this.registerSkill(new UnderConstructionSkill());
         this.registerSkill(new IllegalConstructionSkill());
-        this.registerSkill(new GamblerSkill(1));
-        this.registerSkill(new GamblerSkill(2));
-        this.registerSkill(new GamblerSkill(3));
-        this.registerSkill(new GamblerSkill(4));
-        this.registerSkill(new GamblerSkill(5));
+        this.registerSkill(new KOHunterSkill(1));
+        this.registerSkill(new KOHunterSkill(2));
+        this.registerSkill(new KOHunterSkill(3));
+        this.registerSkill(new KOHunterSkill(4));
+        this.registerSkill(new KOHunterSkill(5));
 
         this.activeEffects = {
             noSlacking: null,
@@ -57,6 +57,10 @@ class SkillManager {
         this.playerHands = { 1: [], 2: [] }; // BLACK=1, WHITE=2
 
         this.transientHighlights = [];
+
+        // KO Hunter state
+        this.koCaptures = { 1: 0, 2: 0 };
+        this.koHunterLevel = { 1: 1, 2: 1 };
     }
 
     addTransientHighlight(x, y, style, durationMs = 2500) {
@@ -78,7 +82,13 @@ class SkillManager {
 
     addSkillToHand(player, skillId) {
         if (!this.playerHands[player]) this.playerHands[player] = [];
-        this.playerHands[player].push(skillId);
+        
+        let idToAdd = skillId;
+        if (skillId === 'ko_hunter' || skillId.startsWith('ko_hunter_')) {
+            idToAdd = `ko_hunter_${this.koHunterLevel[player] || 1}`;
+        }
+        
+        this.playerHands[player].push(idToAdd);
     }
 
     removeSkillFromHand(player, skillId) {
@@ -103,6 +113,54 @@ class SkillManager {
             [available[i], available[j]] = [available[j], available[i]];
         }
         return available.slice(0, count);
+    }
+
+    /**
+     * Called when a player captures stones.
+     * We define a KO capture as capturing exactly 1 stone, where that stone was a single-stone group.
+     */
+    notifyCapture(player, count, isKoCandidate) {
+        if (count === 1 && isKoCandidate) {
+            this.koCaptures[player]++;
+            
+            const currentLevel = this.koHunterLevel[player];
+            if (currentLevel < 5 && this.koCaptures[player] >= 3) {
+                this.koCaptures[player] = 0;
+                this.upgradeKOHunter(player);
+            } else if (this.playerHasSkillPrefix(player, 'ko_hunter_')) {
+                // Show progress if they actually have the skill
+                if (typeof addLog === 'function') {
+                    addLog(t('koHunterProgress').replace('{count}', this.koCaptures[player]), 'system');
+                }
+            }
+        }
+    }
+
+    upgradeKOHunter(player) {
+        const oldLevel = this.koHunterLevel[player];
+        const newLevel = oldLevel + 1;
+        this.koHunterLevel[player] = newLevel;
+
+        const oldId = `ko_hunter_${oldLevel}`;
+        const newId = `ko_hunter_${newLevel}`;
+
+        // Upgrade all in hand
+        if (this.playerHands[player]) {
+            for (let i = 0; i < this.playerHands[player].length; i++) {
+                if (this.playerHands[player][i] === oldId) {
+                    this.playerHands[player][i] = newId;
+                }
+            }
+        }
+
+        if (typeof addLog === 'function') {
+            addLog(t('koHunterUpgrade').replace('{tier}', t(`tier${newLevel}`)), 'system');
+        }
+        if (typeof updateSkillUI === 'function') updateSkillUI();
+    }
+
+    playerHasSkillPrefix(player, prefix) {
+        return this.playerHands[player] && this.playerHands[player].some(id => id.startsWith(prefix));
     }
 
     resetTurn(playerId) {
@@ -131,6 +189,8 @@ class SkillManager {
             illegalConstructions: []
         };
         this.lastSkillUsed = { 1: null, 2: null };
+        this.koCaptures = { 1: 0, 2: 0 };
+        this.koHunterLevel = { 1: 1, 2: 1 };
     }
     async toggleSkill(skillId, isOnlineGame, wsSendCallback) {
         if (this.activeSkill && this.activeSkill.id === skillId) {

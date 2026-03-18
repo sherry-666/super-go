@@ -43,6 +43,11 @@ const skillMeta = {
     gambler_3:     { icon: '🎲', nameKey: 'skillGambler',       descKey: 'skillGamblerDesc', tier: SkillTier.TIER3 },
     gambler_4:     { icon: '🎲', nameKey: 'skillGambler',       descKey: 'skillGamblerDesc', tier: SkillTier.TIER4 },
     gambler_5:     { icon: '🎲', nameKey: 'skillGambler',       descKey: 'skillGamblerDesc', tier: SkillTier.TIER5 },
+    ko_hunter_1:   { icon: '🏆', nameKey: 'skillKOHunter',      descKey: 'skillKOHunterDesc', tier: SkillTier.TIER1 },
+    ko_hunter_2:   { icon: '🏆', nameKey: 'skillKOHunter',      descKey: 'skillKOHunterDesc', tier: SkillTier.TIER2 },
+    ko_hunter_3:   { icon: '🏆', nameKey: 'skillKOHunter',      descKey: 'skillKOHunterDesc', tier: SkillTier.TIER3 },
+    ko_hunter_4:   { icon: '🏆', nameKey: 'skillKOHunter',      descKey: 'skillKOHunterDesc', tier: SkillTier.TIER4 },
+    ko_hunter_5:   { icon: '🏆', nameKey: 'skillKOHunter',      descKey: 'skillKOHunterDesc', tier: SkillTier.TIER5 },
 };
 
 const KOMI = 6.5;
@@ -1407,6 +1412,23 @@ function applyMove(x, y) {
 
     lastMovedColor = currentPlayer;
     skillManager.decrementEffects(currentPlayer);
+    
+    // Notify SkillManager of capture for KO Hunter scaling
+    // A KO candidate capture is 1 stone where that stone was a single-stone group.
+    let isKoCandidate = false;
+    if (capturedCount === 1 && capturedPositions.length === 1) {
+        // Need to check group size from the *previous* board state
+        const { x: cx, y: cy } = capturedPositions[0];
+        const prevBoard = history[history.length - 1];
+        if (prevBoard) {
+            const group = getGroup(cx, cy, prevBoard);
+            if (group.stones.length === 1) {
+                isKoCandidate = true;
+            }
+        }
+    }
+    skillManager.notifyCapture(currentPlayer, capturedCount, isKoCandidate);
+
     currentPlayer = opponentColor;
     consecutivePasses = 0;
     showingTerritory = false;
@@ -2002,6 +2024,80 @@ function getPlayerLabel(player) {
 }
 
 // ====================== Skills System ======================
+
+/**
+ * Special modal for the KO Hunter skill.
+ */
+function showKOHunterModal(player, tier) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('kohunter-modal');
+        const poolEl = document.getElementById('kohunter-pool');
+        const msgEl = document.getElementById('kohunter-result-msg');
+
+        // Reset state
+        modal.classList.remove('hidden');
+        msgEl.classList.add('hidden');
+        poolEl.classList.remove('hidden');
+        poolEl.innerHTML = '';
+
+        const allIds = Object.keys(skillManager.skills);
+        // Get 2 random skills of the SAME TIER (excluding gamblers/kohunters)
+        let sameTierIds = allIds.filter(id => {
+            const meta = skillMeta[id];
+            return meta && meta.tier === tier && !id.startsWith('gambler_') && !id.startsWith('ko_hunter_');
+        });
+
+        // Filter for unowned if possible
+        const unowned = sameTierIds.filter(id => !skillManager.playerHasSkill(player, id));
+        let choices = [];
+        if (unowned.length >= 2) {
+            choices = unowned.sort(() => Math.random() - 0.5).slice(0, 2);
+        } else if (sameTierIds.length >= 2) {
+            choices = sameTierIds.sort(() => Math.random() - 0.5).slice(0, 2);
+        } else {
+            // Absolute fallback: standard draw choices
+            choices = skillManager.getDrawOptions(player, 2);
+            if (choices.length < 2) {
+                const fallbackPool = allIds.filter(id => !id.startsWith('gambler_') && !id.startsWith('ko_hunter_'));
+                while (choices.length < 2) {
+                    choices.push(fallbackPool[Math.floor(Math.random() * fallbackPool.length)]);
+                }
+            }
+        }
+
+        choices.forEach(skillId => {
+            const meta = skillMeta[skillId] || { icon: '✨', nameKey: skillId, descKey: '' };
+            const card = document.createElement('div');
+            card.className = 'draw-card';
+            const tierKey = `tier${meta.tier || 1}`;
+            card.innerHTML = `
+                <div class="draw-card-icon">${meta.icon}</div>
+                <div class="draw-card-tier" data-i18n="${tierKey}">${t(tierKey)}</div>
+                <div class="draw-card-name">${t(meta.nameKey)}</div>
+                <div class="draw-card-desc">${t(meta.descKey)}</div>
+            `;
+            card.addEventListener('click', () => {
+                const allCards = poolEl.querySelectorAll('.draw-card');
+                allCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+
+                skillManager.addSkillToHand(player, skillId);
+                addLog(t('drewLabel').replace('{player}', getPlayerLabel(player)).replace('{skill}', t(meta.nameKey)), 'system');
+
+                if (gameMode === 'online') {
+                    wsSend('skill_pick', { player, skillId });
+                }
+
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    updateSkillUI();
+                    resolve();
+                }, 600);
+            });
+            poolEl.appendChild(card);
+        });
+    });
+}
 
 function updateSkillUI() {
     const handEl = document.getElementById('skill-hand');
