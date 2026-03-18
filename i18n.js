@@ -399,7 +399,7 @@ function applyLanguage() {
     }
 }
 
-document.getElementById('lang-toggle').addEventListener('click', () => {
+document.getElementById('lang-toggle')?.addEventListener('click', () => {
     window.currentLang = window.currentLang === 'en' ? 'zh' : 'en';
     applyLanguage();
     
