@@ -1415,19 +1415,18 @@ function applyMove(x, y) {
     
     // Notify SkillManager of capture for KO Hunter scaling
     // A KO candidate capture is 1 stone where that stone was a single-stone group.
-    let isKoCandidate = false;
+    let capturedPos = null;
     if (capturedCount === 1 && capturedPositions.length === 1) {
-        // Need to check group size from the *previous* board state
         const { x: cx, y: cy } = capturedPositions[0];
         const prevBoard = history[history.length - 1];
         if (prevBoard) {
             const group = getGroup(cx, cy, prevBoard);
             if (group.stones.length === 1) {
-                isKoCandidate = true;
+                capturedPos = { x: cx, y: cy };
             }
         }
     }
-    skillManager.notifyCapture(currentPlayer, capturedCount, isKoCandidate);
+    skillManager.notifyCapture(currentPlayer, capturedCount, { x, y }, capturedPos);
 
     currentPlayer = opponentColor;
     consecutivePasses = 0;

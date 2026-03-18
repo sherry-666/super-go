@@ -61,6 +61,7 @@ class SkillManager {
         // KO Hunter state
         this.koCaptures = { 1: 0, 2: 0 };
         this.koHunterLevel = { 1: 1, 2: 1 };
+        this.lastCaptureByPlayer = { 1: null, 2: null };
     }
 
     addTransientHighlight(x, y, style, durationMs = 2500) {
@@ -117,22 +118,37 @@ class SkillManager {
 
     /**
      * Called when a player captures stones.
-     * We define a KO capture as capturing exactly 1 stone, where that stone was a single-stone group.
+     * A "Ko capture" in our context is the SECOND capture in a reciprocal sequence.
      */
-    notifyCapture(player, count, isKoCandidate) {
-        if (count === 1 && isKoCandidate) {
-            this.koCaptures[player]++;
-            
-            const currentLevel = this.koHunterLevel[player];
-            if (currentLevel < 5 && this.koCaptures[player] >= 3) {
-                this.koCaptures[player] = 0;
-                this.upgradeKOHunter(player);
-            } else if (this.playerHasSkillPrefix(player, 'ko_hunter_')) {
-                // Show progress if they actually have the skill
-                if (typeof addLog === 'function') {
-                    addLog(t('koHunterProgress').replace('{count}', this.koCaptures[player]), 'system');
+    notifyCapture(player, count, playedPos, capturedPos) {
+        if (count === 1 && playedPos && capturedPos) {
+            const opponent = player === 1 ? 2 : 1;
+            const oppLast = this.lastCaptureByPlayer[opponent];
+
+            // If opponent's last capture was at my played position, 
+            // AND my capture is at their played position -> it's a reciprocal Ko capture.
+            if (oppLast && 
+                oppLast.capturedPos.x === playedPos.x && oppLast.capturedPos.y === playedPos.y &&
+                oppLast.playedPos.x === capturedPos.x && oppLast.playedPos.y === capturedPos.y) {
+                
+                this.koCaptures[player]++;
+                const currentLevel = this.koHunterLevel[player];
+                
+                if (currentLevel < 5 && this.koCaptures[player] >= 3) {
+                    this.koCaptures[player] = 0;
+                    this.upgradeKOHunter(player);
+                } else if (this.playerHasSkillPrefix(player, 'ko_hunter_')) {
+                    if (typeof addLog === 'function') {
+                        addLog(t('koHunterProgress').replace('{count}', this.koCaptures[player]), 'system');
+                    }
                 }
             }
+            
+            // Record this capture
+            this.lastCaptureByPlayer[player] = { playedPos, capturedPos };
+        } else if (count > 1) {
+            // Multi-captures don't preserve Ko sequences for the next move
+            this.lastCaptureByPlayer[player] = null;
         }
     }
 
@@ -191,6 +207,7 @@ class SkillManager {
         this.lastSkillUsed = { 1: null, 2: null };
         this.koCaptures = { 1: 0, 2: 0 };
         this.koHunterLevel = { 1: 1, 2: 1 };
+        this.lastCaptureByPlayer = { 1: null, 2: null };
     }
     async toggleSkill(skillId, isOnlineGame, wsSendCallback) {
         if (this.activeSkill && this.activeSkill.id === skillId) {
