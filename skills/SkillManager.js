@@ -112,7 +112,14 @@ class SkillManager {
     getDrawOptions(player, count = 3) {
         const allIds = Object.keys(this.skills);
         const owned = this.playerHands[player] || [];
-        const available = allIds.filter(id => !owned.includes(id));
+        const available = allIds.filter(id => {
+            const isOwned = owned.includes(id);
+            if (isOwned) return false;
+            
+            // Only Tier 1 skills are in the random draw pool
+            const meta = typeof skillMeta !== 'undefined' ? skillMeta[id] : null;
+            return !meta || meta.tier === 1;
+        });
         // Shuffle and slice
         for (let i = available.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
