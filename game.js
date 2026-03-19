@@ -2449,30 +2449,18 @@ function showGamblerModal(player, tier) {
             // Filter for unowned if possible
             const unownedSameTier = availableSameTier.filter(id => !skillManager.playerHasSkill(player, id));
             
+            // Selection logic:
+            // 1. If 2+ unowned skills of this tier exist, pick 2 random unowned.
+            // 2. If <2 unowned exist, pick all unowned and fill with random owned of SAME TIER.
             let options = [];
             if (unownedSameTier.length >= 2) {
-                // Shuffle unowned
-                for (let i = unownedSameTier.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [unownedSameTier[i], unownedSameTier[j]] = [unownedSameTier[j], unownedSameTier[i]];
-                }
-                options = unownedSameTier.slice(0, 2);
-            } else if (availableSameTier.length >= 2) {
-                // If not enough unowned, allow duplicates from same tier
-                for (let i = availableSameTier.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [availableSameTier[i], availableSameTier[j]] = [availableSameTier[j], availableSameTier[i]];
-                }
-                options = availableSameTier.slice(0, 2);
+                options = unownedSameTier.sort(() => Math.random() - 0.5).slice(0, 2);
             } else {
-                // Absolute fallback: use standard draw options (any tier)
-                options = skillManager.getDrawOptions(player, 2);
-                if (options.length < 2) {
-                    const fallbackPool = allIds.filter(id => !id.startsWith('gambler_'));
-                    while (options.length < 2) {
-                        options.push(fallbackPool[Math.floor(Math.random() * fallbackPool.length)]);
-                    }
-                }
+                // Take all unowned, fill rest from availableSameTier
+                options = [...unownedSameTier];
+                const pool = availableSameTier.filter(id => !options.includes(id));
+                const fill = pool.sort(() => Math.random() - 0.5).slice(0, 2 - options.length);
+                options = options.concat(fill);
             }
 
             options.forEach(skillId => {
