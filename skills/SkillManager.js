@@ -118,17 +118,31 @@ class SkillManager {
     /**
      * Returns up to `count` random skill IDs that the player doesn't already own.
      */
-    getDrawOptions(player, count = 3) {
+    getDrawOptions(player, count = 3, tier = 1) {
         const allIds = Object.keys(this.skills);
         const owned = this.playerHands[player] || [];
-        const available = allIds.filter(id => {
-            const isOwned = owned.includes(id);
-            if (isOwned) return false;
-            
-            // Only Tier 1 skills are in the random draw pool
+        
+        // Filter by tier
+        let available = allIds.filter(id => {
             const meta = typeof skillMeta !== 'undefined' ? skillMeta[id] : null;
-            return !meta || meta.tier === 1;
+            if (!meta || meta.tier !== tier) return false;
+            
+            // Exclude adaptive skills that handle their own upgrades
+            if (id.startsWith('ko_hunter_') || id.startsWith('soul_reaper_') || id.startsWith('gambler_')) return false;
+            
+            return !owned.includes(id);
         });
+
+        // If not enough unique skills, allow duplicates of same tier (rare, but for safety)
+        if (available.length < count) {
+            const sameTierAll = allIds.filter(id => {
+                const meta = typeof skillMeta !== 'undefined' ? skillMeta[id] : null;
+                return meta && meta.tier === tier && !id.startsWith('ko_hunter_') && !id.startsWith('soul_reaper_') && !id.startsWith('gambler_');
+            });
+            const pool = sameTierAll.filter(id => !available.includes(id));
+            const fill = pool.sort(() => Math.random() - 0.5).slice(0, count - available.length);
+            available = available.concat(fill);
+        }
         // Shuffle and slice
         for (let i = available.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));

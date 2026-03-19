@@ -420,11 +420,19 @@ async function handleServerMessage(msg) {
             if (data && data.nextDrawAt) {
                 nextDrawAt = data.nextDrawAt;
             }
+            const roundTier = data.roundTier || 1;
             gamePhase = 'drawing';
-            showDrawModal(myColor, () => {
-                gamePhase = 'playing';
-                updateSkillUI();
+            showDrawModal(myColor, roundTier, () => {
+                finishDrawRound();
             });
+            break;
+
+        case 'game_state_sync':
+            if (data.maxSkillTier !== undefined) {
+                maxSkillTier = data.maxSkillTier;
+                const tierName = t(`tier${maxSkillTier}`);
+                addLog(t('maxTierIncreased').replace('{tier}', tierName), 'system');
+            }
             break;
 
         case 'resume_game':
@@ -455,6 +463,7 @@ function initGame(onlineIsTestMode = null) {
     lastMove = null;
     gamePhase = 'playing';
     turnCount = 0;
+    maxSkillTier = 1;
     nextDrawAt = 5 + Math.floor(Math.random() * 11); // 5-15 turns
     pendingOnlineDrawPick = false;
     document.getElementById('game-over-modal').classList.add('hidden');
@@ -2300,6 +2309,8 @@ function handleSkillButtonClick(skillId) {
 
 // ====================== Draw Round ======================
 
+let maxSkillTier = 1;
+
 function checkDrawRound() {
     if (gamePhase !== 'playing') return;
     if (document.getElementById('test-mode-toggle').checked) return; // Skip in Test Mode
@@ -2309,38 +2320,61 @@ function checkDrawRound() {
     const cooldown = 5 + Math.floor(Math.random() * 11); // 5-15 turns
     nextDrawAt = turnCount + cooldown;
 
+    // Randomized Tier for this round
+    const roundTier = Math.floor(Math.random() * maxSkillTier) + 1;
+
     if (gameMode === 'online') {
         // Only the player who just moved triggers the draw and notifies the opponent
         if (lastMovedColor !== myColor) return;
         gamePhase = 'drawing';
-        wsSend('draw_round', { nextDrawAt: nextDrawAt });
-        showDrawModal(myColor, () => {
-            gamePhase = 'playing';
-            updateSkillUI();
+        wsSend('draw_round', { nextDrawAt: nextDrawAt, roundTier: roundTier });
+        showDrawModal(myColor, roundTier, () => {
+            finishDrawRound();
         });
     } else {
         // Local: Black draws first, then White
         gamePhase = 'drawing';
-        showDrawModal(BLACK, () => {
-            showDrawModal(WHITE, () => {
-                gamePhase = 'playing';
-                updateSkillUI();
+        showDrawModal(BLACK, roundTier, () => {
+            showDrawModal(WHITE, roundTier, () => {
+                finishDrawRound();
             });
         });
     }
 }
 
-function showDrawModal(player, onComplete) {
+function finishDrawRound() {
+    gamePhase = 'playing';
+    updateSkillUI();
+    
+    // 20% chance to increase max tier
+    // In online mode, let Black decide to keep it in sync
+    const shouldRoll = gameMode !== 'online' || myColor === BLACK;
+    if (shouldRoll && Math.random() < 0.2 && maxSkillTier < 5) {
+        maxSkillTier++;
+        const tierName = t(`tier${maxSkillTier}`);
+        addLog(t('maxTierIncreased').replace('{tier}', tierName), 'system');
+        if (gameMode === 'online') {
+            wsSend('game_state_sync', { maxSkillTier: maxSkillTier });
+        }
+    }
+}
+
+function showDrawModal(player, roundTier, onComplete) {
     const modal = document.getElementById('skill-draw-modal');
     const playerEl = document.getElementById('draw-modal-player');
+    const tierEl = document.getElementById('draw-modal-tier');
     const cardsEl = document.getElementById('draw-cards');
 
-    const options = skillManager.getDrawOptions(player, 3);
+    const options = skillManager.getDrawOptions(player, 3, roundTier);
     const playerLabel = getPlayerLabel(player);
     
     playerEl.textContent = t('isDrawing').replace('{player}', playerLabel);
     playerEl.setAttribute('data-draw-player', player); // Mark who's drawing for refresh
     
+    if (tierEl) {
+        tierEl.textContent = t('drawRoundTier').replace('{tier}', t(`tier${roundTier}`));
+    }
+
     cardsEl.innerHTML = '';
 
 
