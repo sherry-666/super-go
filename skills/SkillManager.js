@@ -40,6 +40,11 @@ class SkillManager {
         this.registerSkill(new KOHunterSkill(3));
         this.registerSkill(new KOHunterSkill(4));
         this.registerSkill(new KOHunterSkill(5));
+        this.registerSkill(new SoulReaperSkill(1));
+        this.registerSkill(new SoulReaperSkill(2));
+        this.registerSkill(new SoulReaperSkill(3));
+        this.registerSkill(new SoulReaperSkill(4));
+        this.registerSkill(new SoulReaperSkill(5));
         this.registerSkill(new GamblerSkill(1));
         this.registerSkill(new GamblerSkill(2));
         this.registerSkill(new GamblerSkill(3));
