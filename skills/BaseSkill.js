@@ -1,3 +1,11 @@
+window.SkillTier = Object.freeze({
+    TIER1: 1,
+    TIER2: 2,
+    TIER3: 3,
+    TIER4: 4,
+    TIER5: 5
+});
+
 class BaseSkill {
     constructor(id, nameKey, descKey, tier) {
         this.id = id;

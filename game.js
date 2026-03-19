@@ -1,11 +1,4 @@
 window.BOARD_SIZE = 19;
-window.SkillTier = Object.freeze({
-    TIER1: 1,
-    TIER2: 2,
-    TIER3: 3,
-    TIER4: 4,
-    TIER5: 5
-});
 let cellSize = 0;
 let padding = 28; // Reduced from 40 for more board space
 
