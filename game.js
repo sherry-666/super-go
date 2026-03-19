@@ -433,6 +433,9 @@ async function handleServerMessage(msg) {
                 const tierName = t(`tier${maxSkillTier}`);
                 addLog(t('maxTierIncreased').replace('{tier}', tierName), 'system');
             }
+            if (data.roundsSinceLastTierUpgrade !== undefined) {
+                roundsSinceLastTierUpgrade = data.roundsSinceLastTierUpgrade;
+            }
             break;
 
         case 'resume_game':
@@ -464,6 +467,7 @@ function initGame(onlineIsTestMode = null) {
     gamePhase = 'playing';
     turnCount = 0;
     maxSkillTier = 1;
+    roundsSinceLastTierUpgrade = 0;
     nextDrawAt = 5 + Math.floor(Math.random() * 11); // 5-15 turns
     pendingOnlineDrawPick = false;
     document.getElementById('game-over-modal').classList.add('hidden');
@@ -1993,6 +1997,12 @@ function refreshUI() {
             playerEl.textContent = t('isDrawing').replace('{player}', getPlayerLabel(player));
         }
 
+        const tierEl = document.getElementById('draw-modal-tier');
+        const roundTier = parseInt(drawModal.getAttribute('data-round-tier'));
+        if (tierEl && !isNaN(roundTier)) {
+            tierEl.textContent = t('drawRoundTier').replace('{tier}', t(`tier${roundTier}`));
+        }
+
         // Refresh existing cards
         const cards = drawModal.querySelectorAll('.draw-card');
         cards.forEach(card => {
@@ -2310,6 +2320,7 @@ function handleSkillButtonClick(skillId) {
 // ====================== Draw Round ======================
 
 let maxSkillTier = 1;
+let roundsSinceLastTierUpgrade = 0;
 
 function checkDrawRound() {
     if (gamePhase !== 'playing') return;
@@ -2346,15 +2357,25 @@ function finishDrawRound() {
     gamePhase = 'playing';
     updateSkillUI();
     
-    // 20% chance to increase max tier
+    // 20% chance to increase max tier, or guaranteed after 5 rounds
     // In online mode, let Black decide to keep it in sync
     const shouldRoll = gameMode !== 'online' || myColor === BLACK;
-    if (shouldRoll && Math.random() < 0.2 && maxSkillTier < 5) {
-        maxSkillTier++;
-        const tierName = t(`tier${maxSkillTier}`);
-        addLog(t('maxTierIncreased').replace('{tier}', tierName), 'system');
-        if (gameMode === 'online') {
-            wsSend('game_state_sync', { maxSkillTier: maxSkillTier });
+    if (shouldRoll && maxSkillTier < 5) {
+        roundsSinceLastTierUpgrade++;
+        const upgradeGuaranteed = roundsSinceLastTierUpgrade >= 5;
+        
+        if (upgradeGuaranteed || Math.random() < 0.2) {
+            maxSkillTier++;
+            roundsSinceLastTierUpgrade = 0;
+            const tierName = t(`tier${maxSkillTier}`);
+            addLog(t('maxTierIncreased').replace('{tier}', tierName), 'system');
+            
+            if (gameMode === 'online') {
+                wsSend('game_state_sync', { 
+                    maxSkillTier: maxSkillTier,
+                    roundsSinceLastTierUpgrade: roundsSinceLastTierUpgrade
+                });
+            }
         }
     }
 }
@@ -2370,6 +2391,7 @@ function showDrawModal(player, roundTier, onComplete) {
     
     playerEl.textContent = t('isDrawing').replace('{player}', playerLabel);
     playerEl.setAttribute('data-draw-player', player); // Mark who's drawing for refresh
+    modal.setAttribute('data-round-tier', roundTier); // Mark tier for refresh
     
     if (tierEl) {
         tierEl.textContent = t('drawRoundTier').replace('{tier}', t(`tier${roundTier}`));
