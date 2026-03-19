@@ -33,8 +33,13 @@ class YourNewSkill extends BaseSkill {
 
 ### 2. Register with SkillManager
 Modify `skills/SkillManager.js`:
-1. **Import**: Add `<script src="skills/YourNewSkill.js"></script>` to `index.html`.
+
+> [!IMPORTANT]
+> **EVERY** new skill file must be added to `index.html` AND registered in `SkillManager.js`. If you don't do this, the skill won't appear in the game or Test Mode dropdown!
+
+1. **Import**: Add `<script src="skills/YourNewSkill.js"></script>` to `index.html` **BEFORE** `SkillManager.js`.
 2. **Register**: In `SkillManager` constructor, add `this.registerSkill(new YourNewSkill());`.
+   - **For Multi-Tier Skills**: You must register **EACH** tier individually, e.g., `this.registerSkill(new YourNewSkill(1)); this.registerSkill(new YourNewSkill(2));` etc.
 3. **State (Optional)**: If the skill has a duration (e.g., a "Zone" for 5 turns), add a tracking array to `this.activeEffects` in both the `constructor` and `resetAll()`.
 4. **Decrement (Optional)**: Update `decrementEffects(finishedPlayerId)` to reduce durations at the end of turns.
 
