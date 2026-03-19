@@ -1439,6 +1439,8 @@ function applyMove(x, y) {
     }
     skillManager.notifyCapture(currentPlayer, capturedCount, { x, y }, capturedPos);
 
+    checkHandLimit(currentPlayer);
+
     currentPlayer = opponentColor;
     consecutivePasses = 0;
     showingTerritory = false;
@@ -1450,6 +1452,19 @@ function applyMove(x, y) {
     updateUI();
     updateSkillUI();
     checkDrawRound();
+}
+
+/**
+ * Checks if a player has exceeded the 3-skill hand limit and drops the oldest if so.
+ */
+function checkHandLimit(player) {
+    const hand = skillManager.playerHands[player] || [];
+    if (hand.length > 3) {
+        const droppedSkillId = hand.shift();
+        const meta = skillMeta[droppedSkillId];
+        const skillName = meta ? t(meta.nameKey) : droppedSkillId;
+        addLog(t('skillDropped').replace('{player}', getPlayerLabel(player)).replace('{skill}', skillName), 'system');
+    }
 }
 
 // Used by skills that manage their own board mutations but still need to end the turn
@@ -1469,6 +1484,9 @@ function finalizeTurn(logMessage, logType, lastX = null, lastY = null) {
 
     lastMovedColor = currentPlayer;
     skillManager.decrementEffects(currentPlayer);
+    
+    checkHandLimit(currentPlayer);
+
     currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
     consecutivePasses = 0;
     showingTerritory = false;
@@ -1515,6 +1533,9 @@ function applyPass() {
     addLog(`${playerLabel} passed`, currentPlayer === BLACK ? 'black' : 'white');
 
     skillManager.decrementEffects(currentPlayer);
+    
+    checkHandLimit(currentPlayer);
+
     currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
     skillManager.resetTurn(currentPlayer);
     consecutivePasses++;
@@ -2127,6 +2148,12 @@ function updateSkillUI() {
     const viewPlayer = gameMode === 'online' ? myColor : currentPlayer;
     const hand = skillManager.playerHands[viewPlayer] || [];
     const canUse = isMyTurn() && !skillManager.skillUsedThisTurn[currentPlayer] && gamePhase === 'playing';
+
+    // Hand limit warning
+    const warningEl = document.getElementById('skill-hand-warning');
+    if (warningEl) {
+        warningEl.classList.toggle('hidden', hand.length <= 3);
+    }
 
     // Remove all existing dynamic buttons (keep the empty placeholder)
     handEl.querySelectorAll('.skill-btn').forEach(btn => btn.remove());
