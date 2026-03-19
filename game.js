@@ -2039,29 +2039,29 @@ function showKOHunterModal(player, tier) {
         poolEl.classList.remove('hidden');
         poolEl.innerHTML = '';
 
-        const allIds = Object.keys(skillManager.skills);
-        // Get 2 random skills of the SAME TIER (excluding gamblers/kohunters)
-        let sameTierIds = allIds.filter(id => {
+        // Get ALL skills of the SAME TIER (excluding gamblers/kohunters)
+        const sameTierIds = allIds.filter(id => {
             const meta = skillMeta[id];
             return meta && meta.tier === tier && !id.startsWith('gambler_') && !id.startsWith('ko_hunter_');
         });
 
-        // Filter for unowned if possible
+        // Filter for unowned
         const unowned = sameTierIds.filter(id => !skillManager.playerHasSkill(player, id));
+        
+        // Selection logic:
+        // 1. If 2+ unowned skills of this tier exist, pick 2 random unowned.
+        // 2. If <2 unowned exist, pick all unowned and fill with random owned of SAME TIER.
+        // 3. Fallback: if tier is somehow empty (shouldn't be), use any skills of same tier.
+        
         let choices = [];
         if (unowned.length >= 2) {
             choices = unowned.sort(() => Math.random() - 0.5).slice(0, 2);
-        } else if (sameTierIds.length >= 2) {
-            choices = sameTierIds.sort(() => Math.random() - 0.5).slice(0, 2);
         } else {
-            // Absolute fallback: standard draw choices
-            choices = skillManager.getDrawOptions(player, 2);
-            if (choices.length < 2) {
-                const fallbackPool = allIds.filter(id => !id.startsWith('gambler_') && !id.startsWith('ko_hunter_'));
-                while (choices.length < 2) {
-                    choices.push(fallbackPool[Math.floor(Math.random() * fallbackPool.length)]);
-                }
-            }
+            // Take all unowned, fill rest with random from sameTierIds
+            choices = [...unowned];
+            const pool = sameTierIds.filter(id => !choices.includes(id));
+            const fill = pool.sort(() => Math.random() - 0.5).slice(0, 2 - choices.length);
+            choices = choices.concat(fill);
         }
 
         choices.forEach(skillId => {
