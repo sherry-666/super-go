@@ -72,6 +72,8 @@ class SkillManager {
         this.koCaptures = { 1: 0, 2: 0 };
         this.koHunterLevel = { 1: 1, 2: 1 };
         this.lastCaptureByPlayer = { 1: null, 2: null };
+        this.soulReaperCaptures = { 1: 0, 2: 0 };
+        this.soulReaperLevel = { 1: 1, 2: 1 };
     }
 
     addTransientHighlight(x, y, style, durationMs = 2500) {
