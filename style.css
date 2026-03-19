@@ -1174,6 +1174,20 @@ canvas {
     transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.skill-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 8px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 2px #000;
+    z-index: 5;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
 .skill-btn .skill-progress-bar {
     opacity: 0.8;
 }

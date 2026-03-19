@@ -2149,10 +2149,22 @@ function updateSkillUI() {
             let progressHtml = '';
             if (skillId.startsWith('ko_hunter_')) {
                 const captures = skillManager.koCaptures[viewPlayer] || 0;
-                const percent = (captures / 3) * 100;
+                const total = 2; // Fixed requirement
+                const percent = Math.min((captures / total) * 100, 100);
                 progressHtml = `
                     <div class="skill-progress-bar">
                         <div class="skill-progress-fill" style="width: ${percent}%"></div>
+                        <span class="skill-progress-text">${captures}/${total}</span>
+                    </div>
+                `;
+            } else if (skillId.startsWith('soul_reaper_')) {
+                const captures = skillManager.soulReaperCaptures[viewPlayer] || 0;
+                const total = 10;
+                const percent = Math.min((captures / total) * 100, 100);
+                progressHtml = `
+                    <div class="skill-progress-bar">
+                        <div class="skill-progress-fill" style="width: ${percent}%"></div>
+                        <span class="skill-progress-text">${captures}/${total}</span>
                     </div>
                 `;
             }
