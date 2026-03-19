@@ -48,6 +48,11 @@ const skillMeta = {
     ko_hunter_3:   { icon: '🏆', nameKey: 'skillKOHunter',      descKey: 'skillKOHunterDesc', tier: SkillTier.TIER3 },
     ko_hunter_4:   { icon: '🏆', nameKey: 'skillKOHunter',      descKey: 'skillKOHunterDesc', tier: SkillTier.TIER4 },
     ko_hunter_5:   { icon: '🏆', nameKey: 'skillKOHunter',      descKey: 'skillKOHunterDesc', tier: SkillTier.TIER5 },
+    soul_reaper_1: { icon: '💀', nameKey: 'skillSoulReaper',    descKey: 'skillSoulReaperDesc', tier: SkillTier.TIER1 },
+    soul_reaper_2: { icon: '💀', nameKey: 'skillSoulReaper',    descKey: 'skillSoulReaperDesc', tier: SkillTier.TIER2 },
+    soul_reaper_3: { icon: '💀', nameKey: 'skillSoulReaper',    descKey: 'skillSoulReaperDesc', tier: SkillTier.TIER3 },
+    soul_reaper_4: { icon: '💀', nameKey: 'skillSoulReaper',    descKey: 'skillSoulReaperDesc', tier: SkillTier.TIER4 },
+    soul_reaper_5: { icon: '💀', nameKey: 'skillSoulReaper',    descKey: 'skillSoulReaperDesc', tier: SkillTier.TIER5 },
 };
 
 const KOMI = 6.5;
@@ -2027,37 +2032,37 @@ function getPlayerLabel(player) {
 /**
  * Special modal for the KO Hunter skill.
  */
-function showKOHunterModal(player, tier) {
+window.showSoulReaperModal = async function(player, tier) {
+    return showSelectionModal(player, tier, 'soul_reaper');
+};
+
+async function showSelectionModal(player, tier, skillPrefix) {
     return new Promise((resolve) => {
         const modal = document.getElementById('kohunter-modal');
         const poolEl = document.getElementById('kohunter-pool');
         const msgEl = document.getElementById('kohunter-result-msg');
+        const titleEl = modal.querySelector('h2');
 
-        // Reset state
+        if (titleEl) {
+            titleEl.textContent = t(skillPrefix === 'ko_hunter' ? 'skillKOHunter' : 'skillSoulReaper');
+        }
+
         modal.classList.remove('hidden');
         msgEl.classList.add('hidden');
         poolEl.classList.remove('hidden');
         poolEl.innerHTML = '';
 
-        // Get ALL skills of the SAME TIER (excluding gamblers/kohunters)
+        const allIds = Object.keys(skillManager.skills);
         const sameTierIds = allIds.filter(id => {
             const meta = skillMeta[id];
-            return meta && meta.tier === tier && !id.startsWith('gambler_') && !id.startsWith('ko_hunter_');
+            return meta && meta.tier === tier && !id.startsWith('gambler_') && !id.startsWith('ko_hunter_') && !id.startsWith('soul_reaper_');
         });
 
-        // Filter for unowned
         const unowned = sameTierIds.filter(id => !skillManager.playerHasSkill(player, id));
-        
-        // Selection logic:
-        // 1. If 2+ unowned skills of this tier exist, pick 2 random unowned.
-        // 2. If <2 unowned exist, pick all unowned and fill with random owned of SAME TIER.
-        // 3. Fallback: if tier is somehow empty (shouldn't be), use any skills of same tier.
-        
         let choices = [];
         if (unowned.length >= 2) {
             choices = unowned.sort(() => Math.random() - 0.5).slice(0, 2);
         } else {
-            // Take all unowned, fill rest with random from sameTierIds
             choices = [...unowned];
             const pool = sameTierIds.filter(id => !choices.includes(id));
             const fill = pool.sort(() => Math.random() - 0.5).slice(0, 2 - choices.length);
@@ -2082,20 +2087,21 @@ function showKOHunterModal(player, tier) {
 
                 skillManager.addSkillToHand(player, skillId);
                 addLog(t('drewLabel').replace('{player}', getPlayerLabel(player)).replace('{skill}', t(meta.nameKey)), 'system');
-
-                if (gameMode === 'online') {
-                    wsSend('skill_pick', { player, skillId });
-                }
+                updateSkillUI();
+                if (gameMode === 'online') wsSend('skill_pick', { player, skillId });
 
                 setTimeout(() => {
                     modal.classList.add('hidden');
-                    updateSkillUI();
-                    resolve();
+                    resolve(skillId);
                 }, 600);
             });
             poolEl.appendChild(card);
         });
     });
+}
+
+function showKOHunterModal(player, tier) {
+    return showSelectionModal(player, tier, 'ko_hunter');
 }
 
 function updateSkillUI() {

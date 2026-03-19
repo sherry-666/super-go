@@ -92,6 +92,8 @@ class SkillManager {
         let idToAdd = skillId;
         if (skillId === 'ko_hunter' || skillId.startsWith('ko_hunter_')) {
             idToAdd = `ko_hunter_${this.koHunterLevel[player] || 1}`;
+        } else if (skillId === 'soul_reaper' || skillId.startsWith('soul_reaper_')) {
+            idToAdd = `soul_reaper_${this.soulReaperLevel[player] || 1}`;
         }
         
         this.playerHands[player].push(idToAdd);
@@ -157,10 +159,37 @@ class SkillManager {
                 }
             }
             
+            // Soul Reaper Progress (BOTH sides)
+            [1, 2].forEach(p => {
+                const currentLevel = this.soulReaperLevel[p];
+                if (this.playerHasSkillPrefix(p, 'soul_reaper_')) {
+                    this.soulReaperCaptures[p] += count;
+                    if (currentLevel < 5 && this.soulReaperCaptures[p] >= 10) {
+                        this.soulReaperCaptures[p] -= 10; // Wrap around if multi-capture
+                        this.upgradeSoulReaper(p);
+                    } else if (currentLevel < 5 && typeof addLog === 'function') {
+                        addLog(t('soulReaperProgress').replace('{count}', this.soulReaperCaptures[p]), 'system');
+                    }
+                }
+            });
+
             // Record this capture
             this.lastCaptureByPlayer[player] = { playedPos, capturedPos };
         } else if (count > 1) {
-            // Multi-captures don't preserve Ko sequences for the next move
+            // Multi-captures also count for Soul Reaper
+            [1, 2].forEach(p => {
+                const currentLevel = this.soulReaperLevel[p];
+                if (this.playerHasSkillPrefix(p, 'soul_reaper_')) {
+                    this.soulReaperCaptures[p] += count;
+                    while (currentLevel < 5 && this.soulReaperCaptures[p] >= 10) {
+                        this.soulReaperCaptures[p] -= 10;
+                        this.upgradeSoulReaper(p);
+                    }
+                    if (currentLevel < 5 && typeof addLog === 'function') {
+                        addLog(t('soulReaperProgress').replace('{count}', this.soulReaperCaptures[p]), 'system');
+                    }
+                }
+            });
             this.lastCaptureByPlayer[player] = null;
         }
     }
@@ -183,7 +212,30 @@ class SkillManager {
         }
 
         if (typeof addLog === 'function') {
-            addLog(t('koHunterUpgrade').replace('{tier}', t(`tier${newLevel}`)), 'system');
+            addLog(t('soulReaperUpgrade').replace('{tier}', t(`tier${newLevel}`)), 'system');
+        }
+        if (typeof updateSkillUI === 'function') updateSkillUI();
+    }
+
+    upgradeSoulReaper(player) {
+        const oldLevel = this.soulReaperLevel[player];
+        const newLevel = oldLevel + 1;
+        this.soulReaperLevel[player] = newLevel;
+
+        const oldId = `soul_reaper_${oldLevel}`;
+        const newId = `soul_reaper_${newLevel}`;
+
+        // Upgrade all in hand
+        if (this.playerHands[player]) {
+            for (let i = 0; i < this.playerHands[player].length; i++) {
+                if (this.playerHands[player][i] === oldId) {
+                    this.playerHands[player][i] = newId;
+                }
+            }
+        }
+
+        if (typeof addLog === 'function') {
+            addLog(t('soulReaperUpgrade').replace('{tier}', t(`tier${newLevel}`)), 'system');
         }
         if (typeof updateSkillUI === 'function') updateSkillUI();
     }
