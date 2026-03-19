@@ -455,7 +455,7 @@ function initGame(onlineIsTestMode = null) {
     lastMove = null;
     gamePhase = 'playing';
     turnCount = 0;
-    nextDrawAt = 20 + Math.floor(Math.random() * 11); // 10-15 rounds (20-30 turns)
+    nextDrawAt = 5 + Math.floor(Math.random() * 11); // 5-15 turns
     pendingOnlineDrawPick = false;
     document.getElementById('game-over-modal').classList.add('hidden');
     document.getElementById('scoring-banner').classList.add('hidden');
