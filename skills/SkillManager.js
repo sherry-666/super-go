@@ -146,11 +146,12 @@ class SkillManager {
                 this.koCaptures[player]++;
                 const currentLevel = this.koHunterLevel[player];
                 
-                if (currentLevel < 5 && this.koCaptures[player] >= 3) {
+                if (currentLevel < 5 && this.koCaptures[player] >= 2) {
                     this.koCaptures[player] = 0;
                     this.upgradeKOHunter(player);
                 } else if (this.playerHasSkillPrefix(player, 'ko_hunter_')) {
-                    if (typeof addLog === 'function') {
+                    // Only show progress if not yet at max tier
+                    if (currentLevel < 5 && typeof addLog === 'function') {
                         addLog(t('koHunterProgress').replace('{count}', this.koCaptures[player]), 'system');
                     }
                 }
