@@ -49,12 +49,15 @@ class ExcuseMeSkill extends BaseSkill {
         board[x2][y2] = temp;
         playStoneSound();
 
+        // Resolve captures and suicides triggered by the swap
+        const allCaptured = window.resolveAllCaptures(currentPlayer);
+
         // Broadcast effect immediately for opponent
         if (typeof drawBoard === 'function') {
             drawBoard();
         }
         
-        // Temporarily highlight the two swapped stones to make it obvious
+        // Temporarily highlight the two swapped stones and any captured stones
         if (manager && typeof manager.addTransientHighlight === 'function') {
             const highlightConfig = {
                 borderColor: 'rgba(100, 180, 255, 0.9)',
@@ -62,6 +65,14 @@ class ExcuseMeSkill extends BaseSkill {
             };
             manager.addTransientHighlight(x1, y1, highlightConfig);
             manager.addTransientHighlight(x2, y2, highlightConfig);
+
+            allCaptured.forEach(({ x, y }) => {
+                manager.addTransientHighlight(x, y, {
+                    borderColor: 'rgba(0, 100, 255, 0.9)',
+                    glowColor: 'rgba(0, 100, 255, 0.6)',
+                    isDotted: true
+                });
+            });
         }
     }
 }

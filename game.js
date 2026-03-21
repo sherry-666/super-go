@@ -46,6 +46,7 @@ const skillMeta = {
     soul_reaper_3: { icon: '💀', nameKey: 'skillSoulReaper',    descKey: 'skillSoulReaperDesc', tier: SkillTier.TIER3 },
     soul_reaper_4: { icon: '💀', nameKey: 'skillSoulReaper',    descKey: 'skillSoulReaperDesc', tier: SkillTier.TIER4 },
     soul_reaper_5: { icon: '💀', nameKey: 'skillSoulReaper',    descKey: 'skillSoulReaperDesc', tier: SkillTier.TIER5 },
+    adhd:          { icon: '🏃‍♂️', nameKey: 'skillAdhd',          descKey: 'skillAdhdDesc', tier: SkillTier.TIER1 },
 };
 
 const KOMI = 6.5;
@@ -775,7 +776,7 @@ function drawBoard() {
     }
 
     // Draw last move marker (AFTER fog, so it remains visible)
-    if (lastMove && gamePhase === 'playing') {
+    if (lastMove && (gamePhase === 'playing' || gamePhase === 'drawing')) {
         drawLastMoveMarker(lastMove.x, lastMove.y);
     }
 
@@ -1271,6 +1272,58 @@ function isValidMove(x, y, playerColor, currentBoard = board) {
     return true;
 }
 
+/**
+ * Sweeps the entire board to resolve captures and suicides after complex board manipulations.
+ * Used by skills like Flash Move and Excuse Me.
+ */
+function resolveAllCaptures(triggeringPlayer) {
+    const opponentColor = triggeringPlayer === BLACK ? WHITE : BLACK;
+    const allCapturedPositions = [];
+    let capturedOpponent = 0;
+    let capturedPlayer = 0;
+
+    // 1. Remove opponent groups with 0 liberties
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            if (board[i][j] === opponentColor) {
+                const group = getGroup(i, j, board);
+                if (group.liberties.length === 0) {
+                    group.stones.forEach(([cx, cy]) => {
+                        if (!window.isSquatter(cx, cy) && board[cx][cy] !== EMPTY) {
+                            board[cx][cy] = EMPTY;
+                            captures[triggeringPlayer]++;
+                            capturedOpponent++;
+                            allCapturedPositions.push({ x: cx, y: cy });
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    // 2. Remove triggeringPlayer groups with 0 liberties (suicide consequence)
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            if (board[i][j] === triggeringPlayer) {
+                const group = getGroup(i, j, board);
+                if (group.liberties.length === 0) {
+                    group.stones.forEach(([cx, cy]) => {
+                        if (!window.isSquatter(cx, cy) && board[cx][cy] !== EMPTY) {
+                            board[cx][cy] = EMPTY;
+                            captures[opponentColor]++;
+                            capturedPlayer++;
+                            allCapturedPositions.push({ x: cx, y: cy });
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    return allCapturedPositions;
+}
+window.resolveAllCaptures = resolveAllCaptures;
+
 function applyMove(x, y) {
     // --- Void Stone Trigger ---
     // Check if the move lands on an opponent's void stone
@@ -1406,8 +1459,12 @@ function applyMove(x, y) {
 
     territoryMap = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
 
-    // Clear my active debuffs at the END of my turn before switching
-    skillManager.clearEffects(currentPlayer);
+    const isExtraMove = skillManager.activeEffects && skillManager.activeEffects.extraMoves && skillManager.activeEffects.extraMoves[currentPlayer] > 0;
+
+    if (!isExtraMove) {
+        // Clear my active debuffs at the END of my turn before switching
+        skillManager.clearEffects(currentPlayer);
+    }
 
     board = nextBoard;
     captures[currentPlayer] += capturedCount;
@@ -1422,7 +1479,9 @@ function applyMove(x, y) {
     addLog(logMsg, currentPlayer === BLACK ? 'black' : 'white');
 
     lastMovedColor = currentPlayer;
-    skillManager.decrementEffects(currentPlayer);
+    if (!isExtraMove) {
+        skillManager.decrementEffects(currentPlayer);
+    }
     
     // Notify SkillManager of capture for KO Hunter scaling
     // A KO candidate capture is 1 stone where that stone was a single-stone group.
@@ -1441,11 +1500,16 @@ function applyMove(x, y) {
 
     checkHandLimit(currentPlayer);
 
-    currentPlayer = opponentColor;
-    consecutivePasses = 0;
-    showingTerritory = false;
-    skillManager.resetTurn(currentPlayer);
-    turnCount++;
+    if (isExtraMove) {
+        skillManager.activeEffects.extraMoves[currentPlayer]--;
+        addLog(t('extraMoveTriggered').replace('{player}', playerLabel), 'system');
+    } else {
+        currentPlayer = opponentColor;
+        consecutivePasses = 0;
+        showingTerritory = false;
+        skillManager.resetTurn(currentPlayer);
+        turnCount++;
+    }
     
     playStoneSound(); 
     drawBoard();
@@ -2383,6 +2447,7 @@ function checkDrawRound() {
 function finishDrawRound() {
     gamePhase = 'playing';
     updateSkillUI();
+    drawBoard();
     
     // 20% chance to increase max tier, or guaranteed after 5 rounds
     // In online mode, let Black decide to keep it in sync

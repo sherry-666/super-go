@@ -75,25 +75,8 @@ class FlashMoveSkill extends BaseSkill {
 
         board[x2][y2] = board[x1][y1];
         board[x1][y1] = EMPTY;
-        playStoneSound();
-
-        // Resolve captures: remove opponent groups with no liberties
-        const allCaptured = [];
-        const neighbors = [[x2-1,y2],[x2+1,y2],[x2,y2-1],[x2,y2+1]];
-        for (const [nx, ny] of neighbors) {
-            if (nx >= 0 && nx < board.length && ny >= 0 && ny < board.length) {
-                if (board[nx][ny] === opponentColor) {
-                    const group = getGroup(nx, ny, board);
-                    if (group.liberties.length === 0) {
-                        group.stones.forEach(([cx, cy]) => {
-                            allCaptured.push({ x: cx, y: cy });
-                            board[cx][cy] = EMPTY;
-                            captures[p]++;
-                        });
-                    }
-                }
-            }
-        }
+        // Resolve captures and suicides on the whole board
+        const allCaptured = window.resolveAllCaptures(p);
 
         // Immediately redraw board so the opponent sees the skill effect right away
         if (typeof drawBoard === 'function') {

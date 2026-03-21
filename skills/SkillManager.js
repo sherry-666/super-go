@@ -50,8 +50,10 @@ class SkillManager {
         this.registerSkill(new GamblerSkill(3));
         this.registerSkill(new GamblerSkill(4));
         this.registerSkill(new GamblerSkill(5));
+        this.registerSkill(new AdhdSkill());
 
         this.activeEffects = {
+            extraMoves: { 1: 0, 2: 0 },
             noSlacking: null,
             oops: null,
             blindfolds: [],
@@ -280,6 +282,7 @@ class SkillManager {
         this.resetTurn(2);
         this.resetHands();
         this.activeEffects = {
+            extraMoves: { 1: 0, 2: 0 },
             noSlacking: null,
             oops: null,
             blindfolds: [],
