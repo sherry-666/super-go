@@ -527,10 +527,9 @@ function initGame(onlineIsTestMode = null) {
     // Start animation loop if not already running
     if (!window.animationLoopId) {
         animate();
-    } else {
-        // Redraw immediately to clear lingering fogs which are no longer active
-        drawBoard();
     }
+    // Always redraw immediately so board size changes take effect and stale canvas is cleared
+    drawBoard();
 }
 
 // ====================== Animation ======================
