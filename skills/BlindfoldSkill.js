@@ -13,13 +13,13 @@ class BlindfoldSkill extends BaseSkill {
             skillManager.activeEffects.blindfolds = [];
         }
         
-        // Add fog effect: 3x3 area, 5 turns duration
+        // Add fog effect: 3x3 area, 2 turns duration
         // Owner is the current player (the one who cast it)
         skillManager.activeEffects.blindfolds.push({
             x: targetX,
             y: targetY,
             size: 3,
-            duration: 5,
+            duration: 2,
             owner: currentPlayer
         });
     }

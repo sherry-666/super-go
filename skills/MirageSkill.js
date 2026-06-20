@@ -19,7 +19,7 @@ class MirageSkill extends BaseSkill {
             x: targetX,
             y: targetY,
             size: 5,
-            duration: 5,
+            duration: 2,
             owner: currentPlayer
         });
     }

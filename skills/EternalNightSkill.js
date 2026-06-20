@@ -18,7 +18,7 @@ class EternalNightSkill extends BaseSkill {
             x: 0,
             y: 0,
             size: BOARD_SIZE,
-            duration: 5,
+            duration: 2,
             owner: currentPlayer
         });
     }

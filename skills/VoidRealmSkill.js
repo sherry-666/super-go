@@ -19,7 +19,7 @@ class VoidRealmSkill extends BaseSkill {
             x: targetX,
             y: targetY,
             size: 12,
-            duration: 8,
+            duration: 2,
             owner: currentPlayer
         });
     }

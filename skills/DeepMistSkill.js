@@ -19,7 +19,7 @@ class DeepMistSkill extends BaseSkill {
             x: targetX,
             y: targetY,
             size: 8,
-            duration: 6,
+            duration: 2,
             owner: currentPlayer
         });
     }
