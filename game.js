@@ -1,5 +1,6 @@
 window.BOARD_SIZE = 19;
 let selectedBoardSize = 19;
+let selectedTimerSeconds = 60; // 60s default; null = unlimited
 let cellSize = 0;
 let padding = 28; // Reduced from 40 for more board space
 
@@ -174,6 +175,11 @@ let nextDrawAt = 0;
 let pendingOnlineDrawPick = false;
 let lastMovedColor = null; // tracks who just made the last move
 
+// Move timer state
+let moveTimerSeconds = null; // null = unlimited; set from selectedTimerSeconds at game start
+let moveTimeLeft = 0;
+let moveTimerIntervalId = null;
+
 // ====================== Canvas Setup ======================
 const canvas = document.getElementById('go-board');
 const ctx = canvas.getContext('2d');
@@ -192,6 +198,60 @@ document.querySelectorAll('.board-size-btn').forEach(btn => {
     });
 });
 
+document.getElementById('timer-select').addEventListener('change', (e) => {
+    const val = parseInt(e.target.value, 10);
+    selectedTimerSeconds = val === 0 ? null : val;
+});
+
+// ====================== Move Timer ======================
+function startMoveTimer() {
+    clearMoveTimer();
+    if (moveTimerSeconds === null || gamePhase !== 'playing') return;
+    moveTimeLeft = moveTimerSeconds;
+    updateTimerDisplay();
+    moveTimerIntervalId = setInterval(() => {
+        moveTimeLeft--;
+        updateTimerDisplay();
+        if (moveTimeLeft <= 0) {
+            applyTimeout();
+        }
+    }, 1000);
+}
+
+function clearMoveTimer() {
+    if (moveTimerIntervalId !== null) {
+        clearInterval(moveTimerIntervalId);
+        moveTimerIntervalId = null;
+    }
+}
+
+function updateTimerDisplay() {
+    const el = document.getElementById('move-timer');
+    if (!el) return;
+    if (moveTimerSeconds === null) {
+        el.classList.add('hidden');
+        return;
+    }
+    el.classList.remove('hidden');
+    const mins = Math.floor(moveTimeLeft / 60);
+    const secs = moveTimeLeft % 60;
+    el.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    el.classList.toggle('timer-warning', moveTimeLeft <= 10);
+    el.classList.toggle('timer-critical', moveTimeLeft <= 5);
+}
+
+function applyTimeout() {
+    clearMoveTimer();
+    if (gamePhase !== 'playing') return;
+    gamePhase = 'finished';
+    const loser = currentPlayer === BLACK ? t('black') : t('white');
+    const winner = currentPlayer === BLACK ? t('white') : t('black');
+    showModal(t('gameOver'), `<p style="text-align:center; font-size:1.1rem;">${loser} ${t('timedOut')}<br>${winner} ${t('winsTimeout')}</p>`);
+    if (gameMode === 'online' && isMyTurn()) {
+        wsSend('resign', {});
+    }
+}
+
 // Check for Test Mode URL access
 document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.startsWith('/test')) {
@@ -207,6 +267,7 @@ document.getElementById('btn-play-local').addEventListener('click', () => {
     gameMode = 'local';
     myColor = null;
     window.BOARD_SIZE = selectedBoardSize;
+    moveTimerSeconds = selectedTimerSeconds;
     document.getElementById('lobby').classList.add('hidden');
     document.getElementById('game-container').classList.remove('hidden');
     document.getElementById('online-indicator').classList.add('hidden');
@@ -291,9 +352,10 @@ function connectWS(callback) {
 function connectAndHost() {
     document.getElementById('game-code').textContent = '-----';
     const isTestMode = document.getElementById('test-mode-toggle').checked;
-    console.log(`Hosting game... Test Mode: ${isTestMode}, Board: ${selectedBoardSize}x${selectedBoardSize}`);
+    const timerSeconds = selectedTimerSeconds === null ? 0 : selectedTimerSeconds;
+    console.log(`Hosting game... Test Mode: ${isTestMode}, Board: ${selectedBoardSize}x${selectedBoardSize}, Timer: ${timerSeconds}s`);
     connectWS(() => {
-        wsSend('host', { isTestMode, boardSize: selectedBoardSize });
+        wsSend('host', { isTestMode, boardSize: selectedBoardSize, timerSeconds });
     });
 }
 
@@ -324,6 +386,7 @@ async function handleServerMessage(msg) {
             gameMode = 'online';
             myColor = data.color;
             if (data.boardSize) window.BOARD_SIZE = data.boardSize;
+            moveTimerSeconds = (data.timerSeconds === 0) ? null : (data.timerSeconds || null);
             document.getElementById('lobby').classList.add('hidden');
             document.getElementById('game-container').classList.remove('hidden');
 
@@ -389,6 +452,7 @@ async function handleServerMessage(msg) {
                 updateUI();
                 updateSkillUI();
                 checkDrawRound();
+                startMoveTimer();
             }
             break;
 
@@ -463,6 +527,7 @@ async function handleServerMessage(msg) {
 
 // ====================== Game Init ======================
 function initGame(onlineIsTestMode = null) {
+    clearMoveTimer();
     // Strictly stop lobby music during gameplay
     stopAllMusic();
 
@@ -530,6 +595,8 @@ function initGame(onlineIsTestMode = null) {
     }
     // Always redraw immediately so board size changes take effect and stale canvas is cleared
     drawBoard();
+    updateTimerDisplay();
+    startMoveTimer();
 }
 
 // ====================== Animation ======================
@@ -1521,11 +1588,12 @@ function applyMove(x, y) {
         turnCount++;
     }
     
-    playStoneSound(); 
+    playStoneSound();
     drawBoard();
     updateUI();
     updateSkillUI();
     checkDrawRound();
+    startMoveTimer();
 }
 
 /**
@@ -1567,11 +1635,12 @@ function finalizeTurn(logMessage, logType, lastX = null, lastY = null) {
     territoryMap = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
     skillManager.resetTurn(currentPlayer);
     turnCount++;
-    
+
     drawBoard();
     updateUI();
     updateSkillUI();
     checkDrawRound();
+    startMoveTimer();
 }
 
 /**
@@ -1614,19 +1683,23 @@ function applyPass() {
     skillManager.resetTurn(currentPlayer);
     consecutivePasses++;
     updateUI();
-    
+
     if (consecutivePasses >= 2) {
+        clearMoveTimer();
         gamePhase = 'scoring';
         showingTerritory = true;
         document.getElementById('scoring-banner').classList.remove('hidden');
         document.querySelector('.controls').style.display = 'none';
-        
+
         calculateScore();
         drawBoard();
+    } else {
+        startMoveTimer();
     }
 }
 
 function applyResign() {
+    clearMoveTimer();
     const winner = currentPlayer === BLACK ? t('white') : t('black');
     showModal(t('resignation'), `<p style="text-align:center; font-size:1.2rem;">${t('winsByResignation').replace('{winner}', winner)}</p>`);
 }
@@ -2458,6 +2531,7 @@ function finishDrawRound() {
     gamePhase = 'playing';
     updateSkillUI();
     drawBoard();
+    startMoveTimer();
     
     // 20% chance to increase max tier, or guaranteed after 5 rounds
     // In online mode, let Black decide to keep it in sync
@@ -2698,6 +2772,7 @@ document.getElementById('btn-resume-game').addEventListener('click', () => {
 });
 
 function returnToLobby() {
+    clearMoveTimer();
     if (ws) { ws.close(); ws = null; }
     document.getElementById('game-container').classList.add('hidden');
     document.getElementById('game-over-modal').classList.add('hidden');

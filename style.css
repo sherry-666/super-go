@@ -252,6 +252,49 @@ body::before {
     50% { opacity: 0.8; }
 }
 
+.lobby-setting-row {
+    margin-top: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+}
+
+.lobby-setting-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.lobby-select {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.85);
+    border-radius: 10px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.4)'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    padding-right: 1.8rem;
+}
+
+.lobby-select:hover, .lobby-select:focus {
+    border-color: rgba(0, 150, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.lobby-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
 .board-size-control {
     margin-top: 1.5rem;
     display: flex;
@@ -547,8 +590,30 @@ main {
 
 .controls {
     display: flex;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.6rem;
     align-items: center;
+}
+
+.move-timer {
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 2px;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+    transition: color 0.3s;
+}
+
+.move-timer.timer-warning {
+    color: #f0a500;
+    text-shadow: 0 0 12px rgba(240, 165, 0, 0.4);
+}
+
+.move-timer.timer-critical {
+    color: #e04040;
+    text-shadow: 0 0 16px rgba(224, 64, 64, 0.6);
+    animation: pulse 0.6s ease-in-out infinite;
 }
 
 .turn-counter {
