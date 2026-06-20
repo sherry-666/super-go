@@ -595,6 +595,12 @@ main {
     align-items: center;
 }
 
+.controls-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
 .move-timer {
     font-size: 2rem;
     font-weight: 700;
