@@ -55,15 +55,17 @@ wss.on('connection', (ws) => {
         switch (type) {
             case 'host': {
                 const code = generateCode();
-                rooms.set(code, { 
-                    host: ws, 
-                    guest: null, 
-                    isTestMode: !!data.isTestMode 
+                const boardSize = [9, 13, 19].includes(data.boardSize) ? data.boardSize : 19;
+                rooms.set(code, {
+                    host: ws,
+                    guest: null,
+                    isTestMode: !!data.isTestMode,
+                    boardSize,
                 });
                 ws._roomCode = code;
                 ws._role = 'host';
                 send(ws, 'hosted', { code });
-                console.log(`Room ${code} created (Test Mode: ${!!data.isTestMode})`);
+                console.log(`Room ${code} created (Test Mode: ${!!data.isTestMode}, Board: ${boardSize}x${boardSize})`);
                 break;
             }
 
@@ -89,9 +91,9 @@ wss.on('connection', (ws) => {
 
                 // Notify both players the game is starting
                 // Host is BLACK (1), Guest is WHITE (2)
-                send(room.host, 'start', { color: 1, isTestMode: room.isTestMode });
-                send(room.guest, 'start', { color: 2, isTestMode: room.isTestMode });
-                console.log(`Room ${code}: game started (Test Mode: ${room.isTestMode})`);
+                send(room.host, 'start', { color: 1, isTestMode: room.isTestMode, boardSize: room.boardSize });
+                send(room.guest, 'start', { color: 2, isTestMode: room.isTestMode, boardSize: room.boardSize });
+                console.log(`Room ${code}: game started (Test Mode: ${room.isTestMode}, Board: ${room.boardSize}x${room.boardSize})`);
                 break;
             }
 

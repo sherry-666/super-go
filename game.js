@@ -291,9 +291,9 @@ function connectWS(callback) {
 function connectAndHost() {
     document.getElementById('game-code').textContent = '-----';
     const isTestMode = document.getElementById('test-mode-toggle').checked;
-    console.log(`Hosting game... Test Mode: ${isTestMode}`);
+    console.log(`Hosting game... Test Mode: ${isTestMode}, Board: ${selectedBoardSize}x${selectedBoardSize}`);
     connectWS(() => {
-        wsSend('host', { isTestMode });
+        wsSend('host', { isTestMode, boardSize: selectedBoardSize });
     });
 }
 
@@ -323,17 +323,18 @@ async function handleServerMessage(msg) {
         case 'start':
             gameMode = 'online';
             myColor = data.color;
+            if (data.boardSize) window.BOARD_SIZE = data.boardSize;
             document.getElementById('lobby').classList.add('hidden');
             document.getElementById('game-container').classList.remove('hidden');
-            
+
             // Show online indicator
             const indicator = document.getElementById('online-indicator');
             indicator.classList.remove('hidden');
-            document.getElementById('online-color-label').textContent = 
+            document.getElementById('online-color-label').textContent =
                 myColor === BLACK ? t('youAreBlack') : t('youAreWhite');
-            document.getElementById('online-code-label').textContent = 
+            document.getElementById('online-code-label').textContent =
                 roomCode ? `${t('room')}: ${roomCode}` : '';
-            
+
             initGame(data.isTestMode);
             break;
 
