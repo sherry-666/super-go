@@ -1,4 +1,5 @@
 window.BOARD_SIZE = 19;
+let selectedBoardSize = 19;
 let cellSize = 0;
 let padding = 28; // Reduced from 40 for more board space
 
@@ -183,6 +184,14 @@ function showLobbySection(id) {
     document.getElementById(id).classList.remove('hidden');
 }
 
+document.querySelectorAll('.board-size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.board-size-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedBoardSize = parseInt(btn.dataset.size, 10);
+    });
+});
+
 // Check for Test Mode URL access
 document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.startsWith('/test')) {
@@ -197,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('btn-play-local').addEventListener('click', () => {
     gameMode = 'local';
     myColor = null;
+    window.BOARD_SIZE = selectedBoardSize;
     document.getElementById('lobby').classList.add('hidden');
     document.getElementById('game-container').classList.remove('hidden');
     document.getElementById('online-indicator').classList.add('hidden');

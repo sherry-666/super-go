@@ -252,6 +252,48 @@ body::before {
     50% { opacity: 0.8; }
 }
 
+.board-size-control {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.board-size-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+}
+
+.board-size-options {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.board-size-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.board-size-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.board-size-btn.active {
+    background: rgba(0, 150, 255, 0.25);
+    border-color: rgba(0, 150, 255, 0.6);
+    color: #fff;
+    font-weight: 600;
+}
+
 .volume-control, .test-mode-control {
     margin-top: 1.5rem;
     display: flex;
